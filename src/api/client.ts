@@ -6,8 +6,12 @@ import { ApiError, errorFromResponse, networkError } from './errors'
  */
 export interface SessionBridge {
   getAccessToken(): string | null
-  /** Обновляет пару токенов. null — сервер отказал в refresh, сессия закрыта. */
-  refresh(): Promise<boolean>
+  /**
+   * Обновляет пару токенов. Resolve — новая пара сохранена; reject с `ApiError` — сервер
+   * отказал в refresh (`isSessionRejected`) либо обновление не удалось (сеть, 5xx).
+   */
+  refresh(): Promise<void>
+  /** Сервер отверг refresh — единственный случай, когда клиент разлогинивается. */
   onSessionRejected(): void
 }
 
@@ -24,7 +28,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 export class ApiClient {
   private session: SessionBridge | null = null
-  private refreshing: Promise<boolean> | null = null
+  private refreshing: Promise<void> | null = null
 
   setSession(session: SessionBridge): void {
     this.session = session
@@ -38,10 +42,13 @@ export class ApiClient {
 
     if (response.status === 401 && !options.isAuthRequest && session) {
       if (session.getAccessToken() === tokenUsed) {
-        const refreshed = await this.refreshOnce()
-        if (!refreshed) {
-          session.onSessionRejected()
-          throw await this.toError(response)
+        try {
+          await this.refreshOnce()
+        } catch (cause) {
+          // Разлогин — только по отказу сервера (архитектура, инвариант 3):
+          // обрыв сети и 5xx пару токенов оставляют на месте.
+          if (cause instanceof ApiError && cause.isSessionRejected) session.onSessionRejected()
+          throw cause instanceof ApiError ? cause : networkError(cause)
         }
       }
 
@@ -54,15 +61,13 @@ export class ApiClient {
     return this.toData<T>(response)
   }
 
-  /** Один refresh на все параллельные 401. */
-  private refreshOnce(): Promise<boolean> {
-    if (this.refreshing) return this.refreshing
-    this.refreshing = this.session!
-      .refresh()
-      .catch(() => false)
-      .finally(() => {
+  /** Один refresh на все параллельные 401: остальные ждут тот же результат. */
+  private refreshOnce(): Promise<void> {
+    if (!this.refreshing) {
+      this.refreshing = this.session!.refresh().finally(() => {
         this.refreshing = null
       })
+    }
     return this.refreshing
   }
 

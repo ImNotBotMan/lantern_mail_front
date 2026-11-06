@@ -13,14 +13,14 @@ const ME = { id: 1, username: 'me_user', created_at: '2026-01-01T12:00:00Z' }
 
 interface SessionStubs {
   getAccessToken?: () => string | null
-  refresh?: () => Promise<boolean>
+  refresh?: () => Promise<void>
   onSessionRejected?: () => void
 }
 
 function makeSession(stubs: SessionStubs = {}) {
   return {
     getAccessToken: vi.fn(stubs.getAccessToken ?? (() => 'access-1')),
-    refresh: vi.fn(stubs.refresh ?? (async () => true)),
+    refresh: vi.fn(stubs.refresh ?? (async () => undefined)),
     onSessionRejected: vi.fn(stubs.onSessionRejected ?? (() => undefined)),
   }
 }
@@ -55,7 +55,6 @@ describe('api-client', () => {
 
     session.refresh.mockImplementation(async () => {
       token = 'fresh'
-      return true
     })
 
     server.use(
@@ -81,7 +80,6 @@ describe('api-client', () => {
 
     session.refresh.mockImplementation(async () => {
       fresh = true
-      return true
     })
 
     server.use(
@@ -98,7 +96,11 @@ describe('api-client', () => {
   })
 
   it('отказ refresh закрывает сессию', async () => {
-    const session = makeSession({ refresh: async () => false })
+    const session = makeSession({
+      refresh: async () => {
+        throw new ApiError(401, 'invalid_refresh_token', 'Invalid refresh token')
+      },
+    })
     const client = makeClient(session)
 
     server.use(
@@ -108,6 +110,30 @@ describe('api-client', () => {
 
     await expect(client.request('GET', '/users/me')).rejects.toBeInstanceOf(ApiError)
     expect(session.onSessionRejected).toHaveBeenCalledTimes(1)
+  })
+
+  it('обрыв сети во время refresh не закрывает сессию и не повторяет запрос', async () => {
+    const session = makeSession({
+      refresh: async () => {
+        throw new ApiError(0, 'network_error', 'Failed to fetch')
+      },
+    })
+    const client = makeClient(session)
+    let calls = 0
+
+    server.use(
+      http.get('*/api/users/me', () => {
+        calls += 1
+        return unauthorized()
+      }),
+    )
+
+    await expect(client.request('GET', '/users/me')).rejects.toMatchObject({
+      status: 0,
+      code: 'network_error',
+    })
+    expect(calls).toBe(1)
+    expect(session.onSessionRejected).not.toHaveBeenCalled()
   })
 
   it('обрыв сети — ApiError network_error, сессия не закрывается', async () => {

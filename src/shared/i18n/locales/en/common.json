@@ -6,7 +6,8 @@
   "nav": {
     "inbox": "Inbox",
     "sent": "Sent",
-    "friends": "Friends"
+    "friends": "Friends",
+    "account": "Account"
   },
   "actions": {
     "retry": "Try again",

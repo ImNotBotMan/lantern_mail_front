@@ -1,0 +1,5 @@
+.check {
+  width: min(420px, 100%);
+  margin: var(--space-6) auto;
+  padding: 0 var(--space-5);
+}

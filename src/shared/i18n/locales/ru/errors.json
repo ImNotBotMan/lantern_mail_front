@@ -1,0 +1,23 @@
+{
+  "not_found": "Ничего не нашлось",
+  "not_authenticated": "Нужно войти заново",
+  "invalid_credentials": "Неверный email или пароль",
+  "invalid_refresh_token": "Сессия истекла, войдите снова",
+  "forbidden": "Это действие недоступно",
+  "not_friends": "Получатель не друг — сначала отправьте заявку",
+  "already_friends": "Вы уже друзья",
+  "friend_request_exists": "Заявка уже отправлена",
+  "incoming_friend_request_exists": "Этот пользователь уже отправил вам заявку",
+  "friend_request_not_pending": "Заявка уже неактуальна",
+  "self_friend_request": "Нельзя отправить заявку самому себе",
+  "email_taken": "Этот email уже занят",
+  "username_taken": "Это имя уже занято",
+  "username_required": "Сначала выберите имя",
+  "invalid_state": "Письмо уже изменилось — обновляем данные",
+  "letter_empty": "Нельзя запечатать пустое письмо",
+  "recipient_missing": "Не выбран получатель",
+  "validation_error": "Проверьте введённые данные",
+  "network_error": "Нет связи с сервером",
+  "server_error": "Сервер не отвечает, попробуйте позже",
+  "unknown": "Что-то пошло не так"
+}

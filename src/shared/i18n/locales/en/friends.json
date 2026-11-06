@@ -1,0 +1,22 @@
+{
+  "title": "Friends",
+  "list": {
+    "title": "My friends",
+    "since": "friends since {{date}}"
+  },
+  "requests": {
+    "incoming": "Requests to me",
+    "outgoing": "My requests"
+  },
+  "search": {
+    "label": "Find by username",
+    "hint": "At least 3 characters",
+    "empty": "Nobody found",
+    "add": "Add friend",
+    "requested": "Request sent",
+    "withdraw": "Withdraw",
+    "accept": "Accept",
+    "decline": "Decline",
+    "unfriend": "Remove friend"
+  }
+}

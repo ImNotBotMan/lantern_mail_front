@@ -1,0 +1,26 @@
+:root {
+  --color-bg: #fbf7f0;
+  --color-surface: #ffffff;
+  --color-ink: #2b241c;
+  --color-ink-muted: #7a6d5f;
+  --color-line: #e4dbcd;
+  --color-accent: #b5651d;
+  --color-accent-ink: #ffffff;
+  --color-danger: #a6382f;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font-body: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+}

@@ -1,0 +1,27 @@
+{
+  "app": {
+    "name": "Lantern Mail",
+    "tagline": "Slow mail: a letter is on its way to you"
+  },
+  "nav": {
+    "inbox": "Inbox",
+    "sent": "Sent",
+    "friends": "Friends"
+  },
+  "actions": {
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "refresh": "Refresh"
+  },
+  "language": {
+    "label": "Language",
+    "ru": "Русский",
+    "en": "English"
+  },
+  "state": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet"
+  }
+}

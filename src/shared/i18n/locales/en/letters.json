@@ -1,0 +1,22 @@
+{
+  "inbox": {
+    "title": "Inbox"
+  },
+  "sent": {
+    "title": "Sent"
+  },
+  "letter": {
+    "title": "Letter"
+  },
+  "editor": {
+    "title": "New letter"
+  },
+  "status": {
+    "draft": "Draft",
+    "sealed": "Sealed",
+    "in_transit": "On the way",
+    "delivered": "Delivered",
+    "read": "Read",
+    "cancelled": "Cancelled"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "not_found": "Not found",
+  "not_authenticated": "Please sign in again",
+  "invalid_credentials": "Wrong email or password",
+  "invalid_refresh_token": "Session expired, please sign in",
+  "forbidden": "This action is not allowed",
+  "not_friends": "The recipient is not a friend — send a request first",
+  "already_friends": "You are already friends",
+  "friend_request_exists": "Request already sent",
+  "incoming_friend_request_exists": "This user has already sent you a request",
+  "friend_request_not_pending": "The request is no longer pending",
+  "self_friend_request": "You cannot send a request to yourself",
+  "email_taken": "This email is already taken",
+  "username_taken": "This username is already taken",
+  "username_required": "Pick a username first",
+  "invalid_state": "The letter has changed — refreshing",
+  "letter_empty": "A letter cannot be sealed empty",
+  "recipient_missing": "No recipient selected",
+  "validation_error": "Please check the entered data",
+  "network_error": "No connection to the server",
+  "server_error": "The server is not responding, try later",
+  "unknown": "Something went wrong"
+}

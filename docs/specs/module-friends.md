@@ -2,14 +2,10 @@
 id: module-front-friends
 type: module-design
 title: "Друзья: поиск, заявки, список"
-status: draft
+status: active
 parent: front-architecture
-depends-on:
-  - module-front-api-client
-  - module-front-session
-tags:
-  - frontend
-  - friends
+depends-on: [module-front-api-client, module-front-session]
+tags: [frontend, friends]
 ---
 
 # Друзья

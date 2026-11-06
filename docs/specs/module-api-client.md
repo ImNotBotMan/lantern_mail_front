@@ -2,13 +2,10 @@
 id: module-front-api-client
 type: module-design
 title: "API-клиент: транспорт, ошибки, refresh"
-status: draft
+status: active
 parent: front-architecture
-depends-on:
-  - module-backend-contract
-tags:
-  - frontend
-  - network
+depends-on: [module-backend-contract]
+tags: [frontend, network]
 ---
 
 # API-клиент

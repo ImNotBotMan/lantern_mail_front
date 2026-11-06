@@ -2,13 +2,10 @@
 id: module-front-session
 type: module-design
 title: "Сессия: токены, вход, выход, guard"
-status: draft
+status: active
 parent: front-architecture
-depends-on:
-  - module-front-api-client
-tags:
-  - frontend
-  - auth
+depends-on: [module-front-api-client]
+tags: [frontend, auth]
 ---
 
 # Сессия

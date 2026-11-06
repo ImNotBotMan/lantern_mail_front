@@ -2,15 +2,10 @@
 id: module-front-letters
 type: module-design
 title: "Письма: черновик, отправка, конверт, чтение"
-status: draft
+status: active
 parent: front-architecture
-depends-on:
-  - module-front-api-client
-  - module-front-session
-  - module-front-friends
-tags:
-  - frontend
-  - letters
+depends-on: [module-front-api-client, module-front-session, module-front-friends]
+tags: [frontend, letters]
 ---
 
 # Письма

@@ -2,12 +2,9 @@
 id: module-front-i18n-ui
 type: module-design
 title: Локализация и UI-примитивы
-status: draft
+status: active
 parent: front-architecture
-tags:
-  - frontend
-  - i18n
-  - ui
+tags: [frontend, i18n, ui]
 ---
 
 # Локализация и UI-примитивы

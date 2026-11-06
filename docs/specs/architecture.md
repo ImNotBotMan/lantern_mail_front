@@ -2,13 +2,10 @@
 id: front-architecture
 type: architecture-design
 title: Архитектура веб-клиента Lantern Mail
-status: draft
+status: active
 parent: lantern-mail-front
-depends-on:
-  - module-backend-contract
-tags:
-  - frontend
-  - architecture
+depends-on: [module-backend-contract]
+tags: [frontend, architecture]
 ---
 
 # Архитектура веб-клиента

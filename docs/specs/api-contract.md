@@ -2,10 +2,8 @@
 id: module-backend-contract
 type: module-design
 title: Контракт бэкенда, который потребляет веб-клиент
-status: draft
-tags:
-  - contract
-  - api
+status: active
+tags: [contract, api]
 ---
 
 # Контракт бэкенда

@@ -2,7 +2,11 @@
   "title": "Friends",
   "list": {
     "title": "My friends",
-    "since": "friends since {{date}}"
+    "since": "friends since {{date}}",
+    "empty": "No friends yet",
+    "unfriend": "Remove friend",
+    "unfriendConfirm": "Letters from the two of you still in transit will be cancelled. Remove {{username}} from friends?",
+    "unfriendConfirmYes": "Remove"
   },
   "requests": {
     "incoming": "Requests to me",

@@ -2,7 +2,11 @@
   "title": "Друзья",
   "list": {
     "title": "Мои друзья",
-    "since": "друзья с {{date}}"
+    "since": "друзья с {{date}}",
+    "empty": "Пока ни одного друга",
+    "unfriend": "Удалить из друзей",
+    "unfriendConfirm": "Летящие письма этой пары будут отменены. Удалить {{username}} из друзей?",
+    "unfriendConfirmYes": "Удалить"
   },
   "requests": {
     "incoming": "Заявки ко мне",

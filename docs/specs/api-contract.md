@@ -25,24 +25,22 @@ tags: [contract, api]
 - Не описывает: реализацию бэкенда, схему БД, воркер, push.
 - Не описывает: как клиент хранит ответы и что рисует — это `architecture` и модули.
 
-## Состояние бэкенда на момент фиксации
+## Состояние бэкенда
 
 Контракт описывает **целевое** состояние, согласованное с пользователем: источник правды
-по друзьям — `docs/friends.md`.
+по друзьям — `docs/friends.md` в корне монорепозитория.
 
-Что уже есть в коде (проверено): авторизация, `/users/me`, весь жизненный цикл письма,
-`/users/search` с `relationship`, `/devices`.
+Бэкенд приведён к этому контракту (PR #4, коммит `3258687`, влит в `main` 2026-11-06).
+Формы и коды ниже сверены с живым `/openapi.json` и кодом `backend/app/api/*`; проверки,
+не требующие базы, подтверждены живыми запросами: `q` короче 3 символов — 422,
+`friend_request_to_self` и `recipient_not_found` — 422, тело заявки принимает только
+`recipient_username`.
 
-Что расходится с этим контрактом и должно быть приведено к нему в бэкенде:
-`GET /friends/requests` (в коде — один эндпоинт с двумя списками), `DELETE /friends/{user_id}`
-(в коде — по числовому id, в контракте — по `username`), `POST /friends/requests/{id}/decline`
-(в коде — `DELETE /friends/requests/{id}` для отказа и отзыва). Коды ошибок друзей —
-по таблице ниже; в коде сейчас `self_friend_request` вместо `friend_request_to_self`.
-
-Плюс на 2026-11-06 бэкенд-репозиторий посреди мержа: неразрешённые конфликты в
-`backend/app/api/deps.py`, `backend/app/db/models.py`, `backend/tests/api/test_letters_api.py`,
-`backend/uv.lock`, `docs/letter-lifecycle.md`. До их сведения живой `/openapi.json`
-недоступен; снимок ниже собран по документированному контракту и коду.
+Ответы, читающие таблицу `friendships` (`/friends`, `/friends/requests/*`, `/users/search`
+с непустым результатом), требуют ревизии Alembic `b7d3e2a91c04` (`uv run alembic upgrade head`):
+на прежней ревизии код уже новый, а схема таблицы старая, и такие запросы отвечают 500.
+Ошибки друзей после миграции — по таблице ниже, включая `incoming_friend_request_exists`,
+`friend_request_not_pending` и `forbidden`.
 
 ## Общие правила
 
@@ -53,8 +51,10 @@ tags: [contract, api]
 - Тело ответа — JSON. Тело ошибки всегда `{ "error": "<код>", "message": "..." }`,
   у `validation_error` дополнительно `details`.
 - Даты — ISO 8601 с зоной (`timestamptz`). Идентификаторы писем — UUID-строки.
-- CORS на бэкенде **не настроен**: разработка его обходит прокси, но прод-сборка с другого
-  origin без него не заработает. Это работа на бэкенде (см. `docs/handoff-backend.md`).
+- CORS настроен на бэкенде: `CORSMiddleware`, `allow_origins` из переменной `CORS_ORIGINS`
+  (по умолчанию `http://localhost:5173`), разрешённые заголовки — `Authorization` и
+  `Content-Type`, без credentials (клиент шлёт `Bearer`, cookie не используются).
+  Прод-сборка с другого origin работает, если его origin добавить в `CORS_ORIGINS`.
 
 ## Токены
 

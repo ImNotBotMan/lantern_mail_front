@@ -1,34 +1,33 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
-import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import i18n from '../shared/i18n'
-import { routes } from './router'
-
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] })
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
-    <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  )
-}
+import { renderAt } from '../test/render'
+import { signInForTest, signOutForTest } from '../test/session'
 
 describe('маршруты', () => {
   it('корень ведёт во входящие', async () => {
+    await signInForTest()
     renderAt('/')
     expect(
-      await screen.findByRole('heading', { name: i18n.t('inbox.title') }),
+      await screen.findByRole('heading', { name: i18n.t('inbox.title', { ns: 'letters' }) }),
     ).toBeInTheDocument()
   })
 
   it('неизвестный адрес показывает 404 внутри layout', async () => {
+    await signInForTest()
     renderAt('/nothing-here')
     expect(
-      await screen.findByRole('heading', { name: i18n.t('errors.not_found') }),
+      await screen.findByRole('heading', { name: i18n.t('not_found', { ns: 'errors' }) }),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: i18n.t('app.name') })).toBeInTheDocument()
+  })
+
+  it('анонимного пользователя уводит на вход', async () => {
+    signOutForTest()
+    renderAt('/inbox')
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('login.title', { ns: 'auth' }) }),
+    ).toBeInTheDocument()
   })
 })

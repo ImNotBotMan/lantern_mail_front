@@ -17,8 +17,12 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // jsdom без собственного origin не даёт localStorage, а сессия на нём и держится.
+    environmentOptions: { jsdom: { url: 'http://localhost:3000' } },
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // e2e-сценарии принадлежат Playwright: vitest их не собирает и не запускает.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     css: false,
   },
 })

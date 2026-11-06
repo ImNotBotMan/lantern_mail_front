@@ -5,7 +5,7 @@ import i18n from './index'
 export const ERROR_NAMESPACE = 'errors'
 
 /** Ключ перевода для кода ошибки или `null`, если перевода нет. */
-export function errorKey(code: string): string | null {
+function errorKey(code: string): string | null {
   return i18n.exists(code, { ns: ERROR_NAMESPACE }) ? code : null
 }
 

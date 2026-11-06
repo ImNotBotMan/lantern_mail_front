@@ -55,7 +55,7 @@ async function refreshTokens(): Promise<void> {
 }
 
 /** Локально закрывает сессию: пара стирается, экраны уходят на вход. */
-export function closeSession(): void {
+function closeSession(): void {
   clearTokens()
   emit({ status: 'anonymous', user: null, error: null })
 }

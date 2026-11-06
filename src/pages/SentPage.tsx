@@ -1,5 +1,5 @@
 import { Placeholder } from './Placeholder'
 
 export function SentPage() {
-  return <Placeholder titleKey="sent.title" />
+  return <Placeholder titleKey="letters:sent.title" />
 }

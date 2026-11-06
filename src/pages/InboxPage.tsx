@@ -1,5 +1,5 @@
 import { Placeholder } from './Placeholder'
 
 export function InboxPage() {
-  return <Placeholder titleKey="inbox.title" />
+  return <Placeholder titleKey="letters:inbox.title" />
 }

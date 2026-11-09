@@ -10,11 +10,18 @@
   },
   "requests": {
     "incoming": "Requests to me",
-    "outgoing": "My requests"
+    "incomingEmpty": "No new requests",
+    "outgoing": "My requests",
+    "outgoingEmpty": "You have not sent any requests yet",
+    "accept": "Accept",
+    "decline": "Decline",
+    "withdraw": "Withdraw",
+    "when": "{{date}}"
   },
   "search": {
     "label": "Find by username",
     "hint": "At least 3 characters",
+    "invalid": "Check the username: latin letters, digits and underscore only",
     "empty": "Nobody found",
     "add": "Add friend",
     "requested": "Request sent",

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -49,34 +49,40 @@ function friendsServer(initial: Friend[], outcome: DeleteOutcome = 'ok') {
 async function renderFriends() {
   await signInForTest()
   renderAt('/friends')
-  return screen.findByRole('heading', { name: t('list.title', 'friends') })
+  await screen.findByRole('heading', { name: t('list.title', 'friends') })
+
+  // На странице три секции (друзья, заявки ко мне, мои заявки) — запросы скоупим по своей.
+  const heading = screen.getByRole('heading', { name: t('list.title', 'friends') })
+  const section = heading.closest('section')
+  if (!section) throw new Error('секция списка друзей не найдена')
+  return within(section)
 }
 
-async function confirmRemoval() {
-  await userEvent.click(screen.getByRole('button', { name: t('list.unfriend', 'friends') }))
+async function confirmRemoval(list: ReturnType<typeof within>) {
+  await userEvent.click(list.getByRole('button', { name: t('list.unfriend', 'friends') }))
   await userEvent.click(
-    screen.getByRole('button', { name: t('list.unfriendConfirmYes', 'friends') }),
+    list.getByRole('button', { name: t('list.unfriendConfirmYes', 'friends') }),
   )
 }
 
 describe('список друзей', () => {
   it('показывает имя и с какого момента дружба', async () => {
     friendsServer([anna, boris])
-    await renderFriends()
+    const list = await renderFriends()
 
-    expect(await screen.findByText('anna')).toBeInTheDocument()
-    expect(screen.getByText('boris')).toBeInTheDocument()
+    expect(await list.findByText('anna')).toBeInTheDocument()
+    expect(list.getByText('boris')).toBeInTheDocument()
 
     const since = formatDate(anna.friends_since, i18n.language)
-    expect(screen.getByText((content) => content.includes(since))).toBeInTheDocument()
+    expect(list.getByText((content) => content.includes(since))).toBeInTheDocument()
   })
 
   it('пустой список — отдельный текст, а не ошибка', async () => {
     friendsServer([])
-    await renderFriends()
+    const list = await renderFriends()
 
-    expect(await screen.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(await list.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
+    expect(list.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('ошибка загрузки предлагает повторить и не выдаёт себя за пусто', async () => {
@@ -90,25 +96,25 @@ describe('список друзей', () => {
         return HttpResponse.json([anna])
       }),
     )
-    await renderFriends()
+    const list = await renderFriends()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(t('network_error', 'errors'))
-    expect(screen.queryByText(t('list.empty', 'friends'))).not.toBeInTheDocument()
+    expect(await list.findByRole('alert')).toHaveTextContent(t('network_error', 'errors'))
+    expect(list.queryByText(t('list.empty', 'friends'))).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: t('actions.retry', 'common') }))
+    await userEvent.click(list.getByRole('button', { name: t('actions.retry', 'common') }))
 
-    expect(await screen.findByText('anna')).toBeInTheDocument()
+    expect(await list.findByText('anna')).toBeInTheDocument()
   })
 
   it('кнопка «Обновить» перезапрашивает список', async () => {
     const state = friendsServer([anna])
-    await renderFriends()
-    await screen.findByText('anna')
+    const list = await renderFriends()
+    await list.findByText('anna')
     const before = state.listRequests
 
-    await userEvent.click(screen.getByRole('button', { name: t('actions.refresh', 'common') }))
+    await userEvent.click(list.getByRole('button', { name: t('actions.refresh', 'common') }))
 
-    expect(await screen.findByText('anna')).toBeInTheDocument()
+    expect(await list.findByText('anna')).toBeInTheDocument()
     expect(state.listRequests).toBeGreaterThan(before)
   })
 })
@@ -116,51 +122,51 @@ describe('список друзей', () => {
 describe('удаление из друзей', () => {
   it('спрашивает подтверждение и предупреждает об отмене летящих писем', async () => {
     const state = friendsServer([anna])
-    await renderFriends()
-    await screen.findByText('anna')
+    const list = await renderFriends()
+    await list.findByText('anna')
 
-    await userEvent.click(screen.getByRole('button', { name: t('list.unfriend', 'friends') }))
+    await userEvent.click(list.getByRole('button', { name: t('list.unfriend', 'friends') }))
 
     const question = t('list.unfriendConfirm', 'friends').replace('{{username}}', 'anna')
-    expect(screen.getByText(question)).toBeInTheDocument()
+    expect(list.getByText(question)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: t('actions.cancel', 'common') }))
+    await userEvent.click(list.getByRole('button', { name: t('actions.cancel', 'common') }))
 
-    expect(screen.queryByText(question)).not.toBeInTheDocument()
-    expect(screen.getByText('anna')).toBeInTheDocument()
+    expect(list.queryByText(question)).not.toBeInTheDocument()
+    expect(list.getByText('anna')).toBeInTheDocument()
     expect(state.deletes).toHaveLength(0)
   })
 
   it('после подтверждения друг исчезает из списка', async () => {
     const state = friendsServer([anna])
-    await renderFriends()
-    await screen.findByText('anna')
+    const list = await renderFriends()
+    await list.findByText('anna')
 
-    await confirmRemoval()
+    await confirmRemoval(list)
 
-    expect(await screen.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
+    expect(await list.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
     expect(state.deletes).toEqual(['anna'])
   })
 
   it('ошибка удаления показывается в строке, друг остаётся', async () => {
     friendsServer([anna], 'error')
-    await renderFriends()
-    await screen.findByText('anna')
+    const list = await renderFriends()
+    await list.findByText('anna')
 
-    await confirmRemoval()
+    await confirmRemoval(list)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(t('network_error', 'errors'))
-    expect(screen.getByText('anna')).toBeInTheDocument()
+    expect(await list.findByRole('alert')).toHaveTextContent(t('network_error', 'errors'))
+    expect(list.getByText('anna')).toBeInTheDocument()
   })
 
   it('удалённый ранее друг молча пропадает, без ошибки', async () => {
     friendsServer([anna], 'not_found')
-    await renderFriends()
-    await screen.findByText('anna')
+    const list = await renderFriends()
+    await list.findByText('anna')
 
-    await confirmRemoval()
+    await confirmRemoval(list)
 
-    expect(await screen.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(await list.findByText(t('list.empty', 'friends'))).toBeInTheDocument()
+    expect(list.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

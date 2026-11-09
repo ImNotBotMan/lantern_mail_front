@@ -1,0 +1,38 @@
+name: CI
+
+# Гоняем на каждый PR и на push в main: типы, юнит-тесты, сборка.
+# e2e (Playwright) сюда не входит: сценарии ходят в живой backend, а его репозиторий
+# приватный — фронтовый CI не может его выкачать без отдельного токена.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Новый коммит в ту же ветку отменяет предыдущий прогон: PR не ждёт устаревшую сборку
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # npm ci, а не install: ставим ровно то, что в package-lock.json
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Типы
+        run: npm run typecheck
+
+      - name: Юнит- и компонентные тесты
+        run: npm test
+
+      - name: Сборка
+        run: npm run build

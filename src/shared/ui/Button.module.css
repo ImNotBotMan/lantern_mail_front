@@ -15,6 +15,13 @@
   opacity: 0.55;
 }
 
+/* Ссылка, оформленная кнопкой (LinkButton): та же рамка и отступы, без подчёркивания. */
+.link {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+
 .primary {
   background: var(--color-accent);
   color: var(--color-accent-ink);

@@ -3,13 +3,52 @@
     "title": "Inbox"
   },
   "sent": {
-    "title": "Sent"
+    "title": "Sent",
+    "new": "Write a letter",
+    "empty": "No letters yet — start with “Write a letter”"
   },
   "letter": {
-    "title": "Letter"
+    "title": "Letter",
+    "to": "To: {{username}}",
+    "from": "From {{username}}",
+    "noRecipient": "no recipient yet",
+    "unknownSender": "unknown sender",
+    "missing": "No such letter: it may have been deleted or the link is stale",
+    "inTransitHint": "The letter is on its way. The recipient will see it only after delivery — a surprise kept."
+  },
+  "when": {
+    "line": "{{label}}: {{date}}",
+    "created": "Created",
+    "sealed": "Sealed",
+    "sent": "Sent",
+    "deliver": "Arrives",
+    "delivered": "Delivered",
+    "read": "Read"
   },
   "editor": {
-    "title": "New letter"
+    "title": "New letter",
+    "editTitle": "Draft",
+    "recipient": "To",
+    "recipientHint": "You can write to mutual friends or to yourself — a letter to the future.",
+    "selfOption": "{{username}} — a letter to the future",
+    "noFriends": "No friends yet: send a request on the Friends screen.",
+    "goToFriends": "Go to friends",
+    "body": "Letter text",
+    "bodyPlaceholder": "Dear friend…",
+    "save": "Save",
+    "seal": "Seal",
+    "unseal": "Unseal",
+    "send": "Send",
+    "delete": "Delete",
+    "edit": "Edit",
+    "sendConfirm": "The letter will go to the recipient and cannot be recalled. Send it?",
+    "sendConfirmYes": "Send",
+    "deleteConfirm": "Delete the letter? This cannot be undone.",
+    "deleteConfirmYes": "Delete",
+    "notEditable": "This letter can no longer be edited.",
+    "unsaved": "There are unsaved changes.",
+    "unsavedLeave": "Leave without saving",
+    "unsavedStay": "Stay"
   },
   "status": {
     "draft": "Draft",

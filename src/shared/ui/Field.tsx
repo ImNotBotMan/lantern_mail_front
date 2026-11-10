@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import type { InputHTMLAttributes } from 'react'
 
-import styles from './Field.module.css'
+import styles from './formField.module.css'
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
@@ -23,7 +23,7 @@ export function Field({ label, hint, error, id, ...rest }: FieldProps) {
       </label>
       <input
         id={fieldId}
-        className={styles.input}
+        className={styles.control}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy || undefined}
         {...rest}

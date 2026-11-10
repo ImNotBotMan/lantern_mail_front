@@ -6,7 +6,13 @@ import { describe, expect, it } from 'vitest'
 import type { AnyLetter } from '../../api/types'
 import i18n from '../../shared/i18n'
 import { formatDate } from '../../shared/i18n/formatDate'
-import { envelope, incomingLetter, sealedLetter, transitLetter } from '../../test/msw/handlers'
+import {
+  envelope,
+  incomingLetter,
+  readIncomingLetter,
+  sealedLetter,
+  transitLetter,
+} from '../../test/msw/handlers'
 import { server } from '../../test/msw/server'
 import { renderAt } from '../../test/render'
 import { signInForTest } from '../../test/session'
@@ -35,6 +41,31 @@ async function renderLetter(id: string): Promise<void> {
 /** Содержимое письма ищем внутри самой статьи, а не в шапке приложения. */
 async function findLetterArticle() {
   return within(await screen.findByRole('article'))
+}
+
+/**
+ * Сервер, который запоминает прочтения: доставленное письмо после `POST /read` приходит
+ * уже прочитанным, как на бэкенде.
+ */
+function readTrackingServer(letter: AnyLetter, afterRead: AnyLetter | null) {
+  const reads: string[] = []
+  let current = letter
+
+  server.use(
+    http.get('*/api/letters/sent', () => HttpResponse.json([])),
+    http.get('*/api/letters/:id', ({ params }) =>
+      String(params.id) === letter.id
+        ? HttpResponse.json(current)
+        : HttpResponse.json({ error: 'not_found', message: 'Not found' }, { status: 404 }),
+    ),
+    http.post('*/api/letters/:id/read', ({ params }) => {
+      reads.push(String(params.id))
+      if (afterRead) current = afterRead
+      return HttpResponse.json(current)
+    }),
+  )
+
+  return reads
 }
 
 describe('экран письма', () => {
@@ -105,5 +136,36 @@ describe('экран письма', () => {
     expect(
       letter.getByText(formatDate(sealedLetter.sealed_at ?? sealedLetter.created_at, i18n.language)),
     ).toBeInTheDocument()
+  })
+
+  it('доставленное письмо становится прочитанным при открытии — ровно один запрос', async () => {
+    const reads = readTrackingServer(incomingLetter, readIncomingLetter)
+    await renderLetter(incomingLetter.id)
+
+    const letter = await findLetterArticle()
+    // Дата прочтения приходит только в ответе на `read` — по ней видно, что письмо обновилось.
+    expect(
+      await letter.findByText(
+        formatDate(readIncomingLetter.read_at ?? incomingLetter.delivered_at, i18n.language),
+      ),
+    ).toBeInTheDocument()
+    expect(reads).toEqual([incomingLetter.id])
+  })
+
+  it('уже прочитанное письмо запрос прочтения не повторяет', async () => {
+    const reads = readTrackingServer(readIncomingLetter, null)
+    await renderLetter(readIncomingLetter.id)
+
+    const letter = await findLetterArticle()
+    expect(letter.getByText('Привет')).toBeInTheDocument()
+    expect(reads).toEqual([])
+  })
+
+  it('конверт в пути не читается', async () => {
+    const reads = readTrackingServer(envelope, null)
+    await renderLetter(envelope.id)
+    const letter = await findLetterArticle()
+    expect(letter.getByText(label('letter.inTransitHint'))).toBeInTheDocument()
+    expect(reads).toEqual([])
   })
 })

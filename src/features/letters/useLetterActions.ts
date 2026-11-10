@@ -40,6 +40,11 @@ export function useSendLetter() {
   return useLetterMutation((id: string) => lettersApi.send(id))
 }
 
+/** Прочтение: доставленное письмо становится прочитанным в момент открытия. */
+export function useReadLetter() {
+  return useLetterMutation((id: string) => lettersApi.read(id))
+}
+
 export function useDeleteLetter() {
   return useLetterMutation((id: string) => lettersApi.remove(id))
 }

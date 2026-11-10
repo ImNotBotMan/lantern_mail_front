@@ -60,7 +60,7 @@ export const transitLetter: LetterResponse = {
 /** Письмо в пути глазами получателя: ни текста, ни времени доставки. */
 export const envelope: IncomingLetterPreview = {
   view: 'incoming_preview',
-  id: letter.id,
+  id: '44444444-4444-4444-4444-444444444444',
   status: 'in_transit',
   sender_username: 'boris',
   wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
@@ -69,13 +69,21 @@ export const envelope: IncomingLetterPreview = {
 /** Доставленное письмо глазами получателя. */
 export const incomingLetter: IncomingLetter = {
   view: 'incoming',
-  id: letter.id,
+  id: '55555555-5555-5555-5555-555555555555',
   status: 'delivered',
   sender_username: 'boris',
   body: 'Привет',
   wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
   delivered_at: '2026-01-05T12:00:00Z',
   read_at: null,
+}
+
+/** Доставленное письмо, которое уже прочитали. */
+export const readIncomingLetter: IncomingLetter = {
+  ...incomingLetter,
+  id: '66666666-6666-6666-6666-666666666666',
+  status: 'read',
+  read_at: '2026-01-07T12:05:00Z',
 }
 
 export const friend: Friend = { username: 'anna', friends_since: '2026-01-01T12:00:00Z' }

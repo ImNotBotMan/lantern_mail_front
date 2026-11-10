@@ -1,6 +1,8 @@
 {
   "inbox": {
-    "title": "Inbox"
+    "title": "Inbox",
+    "empty": "No letters yet — a delivered letter will appear here on its own",
+    "onTheWay": "on the way to you"
   },
   "sent": {
     "title": "Sent",

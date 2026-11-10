@@ -1,7 +1,7 @@
 import type { APIRequestContext, Browser, BrowserContext, Page } from '@playwright/test'
 
 /** Бэкенд e2e ходит напрямую, минуя Vite-прокси: так пользователи готовятся одним запросом. */
-const API_BASE_URL = process.env.E2E_API_BASE_URL ?? 'http://localhost:8000'
+export const API_BASE_URL = process.env.E2E_API_BASE_URL ?? 'http://localhost:8000'
 const WEB_BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5174'
 
 export interface E2EUser {

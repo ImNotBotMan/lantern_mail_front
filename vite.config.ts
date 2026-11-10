@@ -4,12 +4,16 @@ import react from '@vitejs/plugin-react'
 
 // Прокси убирает CORS в разработке: браузер видит один origin, а Vite переписывает
 // /api/* на бэкенд. Для прод-сборки адрес задаётся через VITE_API_BASE_URL.
+// `API_PROXY_TARGET` позволяет направить разработку и e2e на другой бэкенд (например, с
+// короткой задержкой доставки), не трогая конфиг.
+const apiTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: apiTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

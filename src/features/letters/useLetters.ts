@@ -1,13 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { lettersApi } from '../../api'
-import { letterQueryKey, sentLettersQueryKey } from './queryKeys'
+import { inboxLettersQueryKey, letterQueryKey, sentLettersQueryKey } from './queryKeys'
 
 /** Отправленные. Порядок и статусы приходят с сервера — клиент их не вычисляет. */
 export function useSentLetters() {
   return useQuery({
     queryKey: sentLettersQueryKey,
     queryFn: () => lettersApi.sent(),
+  })
+}
+
+/** Входящие: конверты в пути и доставленные письма. Порядок задаёт сервер. */
+export function useInboxLetters() {
+  return useQuery({
+    queryKey: inboxLettersQueryKey,
+    queryFn: () => lettersApi.inbox(),
   })
 }
 

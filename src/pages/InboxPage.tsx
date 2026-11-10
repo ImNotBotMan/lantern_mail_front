@@ -1,5 +1,14 @@
-import { Placeholder } from './Placeholder'
+import { useTranslation } from 'react-i18next'
+
+import { InboxList } from '../features/letters'
 
 export function InboxPage() {
-  return <Placeholder titleKey="letters:inbox.title" />
+  const { t } = useTranslation('letters')
+
+  return (
+    <section>
+      <h1>{t('inbox.title')}</h1>
+      <InboxList />
+    </section>
+  )
 }

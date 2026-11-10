@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next'
 
-import type { IncomingLetter, LetterResponse } from '../../api'
+import type { IncomingLetter, IncomingLetterView, LetterResponse } from '../../api'
 import { formatDate } from '../../shared/i18n/formatDate'
 
 export interface LetterDate {
@@ -40,6 +40,22 @@ export function sentDateLine(letter: LetterResponse, t: TFunction, language: str
     case 'cancelled':
       return line('created', letter.created_at, t, language)
   }
+}
+
+/**
+ * Строка «когда» для входящих. У конверта дат нет вообще — в ответе сервера их нет, — поэтому
+ * `null`, а не пустая строка.
+ */
+export function inboxDateLine(
+  letter: IncomingLetterView,
+  t: TFunction,
+  language: string,
+): string | null {
+  if (letter.view === 'incoming_preview') return null
+  if (letter.status === 'read') {
+    return line('read', letter.read_at ?? letter.delivered_at, t, language)
+  }
+  return line('delivered', letter.delivered_at, t, language)
 }
 
 /** Все моменты письма, которые пришли в ответе. В конверте их нет — и строк не будет. */

@@ -7,5 +7,8 @@ export const lettersQueryKey = ['letters'] as const
 /** Отправленные: черновики, запечатанные, в пути, отменённые. */
 export const sentLettersQueryKey = [...lettersQueryKey, 'sent'] as const
 
+/** Входящие: конверты в пути и доставленные письма. */
+export const inboxLettersQueryKey = [...lettersQueryKey, 'inbox'] as const
+
 /** Письмо по id — отдельно от списков, чтобы экран письма не тянул весь список. */
 export const letterQueryKey = (id: string) => [...lettersQueryKey, 'letter', id] as const

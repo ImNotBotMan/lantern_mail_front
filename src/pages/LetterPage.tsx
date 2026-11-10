@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 
@@ -9,6 +10,7 @@ import {
   lettersPaths,
   useLetter,
 } from '../features/letters'
+import { useReadLetter } from '../features/letters/useLetterActions'
 import { errorMessage } from '../shared/i18n/apiError'
 import { Button, LinkButton, Spinner } from '../shared/ui'
 
@@ -20,6 +22,16 @@ export function LetterPage() {
   const { id } = useParams()
   const { t } = useTranslation('letters')
   const { data, isPending, isError, error, refetch } = useLetter(id ?? '')
+  const { mutate: markRead } = useReadLetter()
+  // Прочтение — один раз на письмо: повторный заход в уже прочитанное запрос не шлёт.
+  const readRequested = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (data?.view !== 'incoming' || data.status !== 'delivered') return
+    if (readRequested.current === data.id) return
+    readRequested.current = data.id
+    markRead(data.id)
+  }, [data, markRead])
 
   if (isPending) return <Spinner />
 

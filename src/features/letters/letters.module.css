@@ -1,0 +1,250 @@
+/* Панель над списком: «Написать письмо» и «Обновить». */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-line);
+  font-family: var(--font-ui);
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rowTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: 340px;
+}
+
+.confirmText {
+  margin: 0;
+  text-align: right;
+  font-size: var(--text-sm);
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
+}
+
+.note {
+  margin: 0 0 var(--space-4);
+  color: var(--color-ink-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+.letter {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.letterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  font-family: var(--font-ui);
+}
+
+.party {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.dates {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+.dates dt {
+  color: var(--color-ink-muted);
+}
+
+.dates dd {
+  margin: 0;
+}
+
+.body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Конверт: получатель видит, что письмо летит, но ни текста, ни времени доставки в ответе нет. */
+.envelope {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 420px;
+  padding: var(--space-5);
+  border: 1px dashed var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: var(--font-ui);
+}
+
+.waxSeal {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-accent) 80%, black);
+}
+
+/* Редактор */
+.editor {
+  max-width: 720px;
+}
+
+.recipients {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: none;
+  font-family: var(--font-ui);
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.hint {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.chip:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.chipActive {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Радиокнопка остаётся в разметке для клавиатуры и скринридера, но не видна: её роль играет чип. */
+.chipInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.noRecipients {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.noRecipients p {
+  margin: 0;
+}
+
+.editorActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.unsaved {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+}
+
+.unsaved p {
+  margin: 0 0 var(--space-3);
+}

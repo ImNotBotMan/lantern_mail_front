@@ -3,6 +3,8 @@ import { http, HttpResponse } from 'msw'
 import type {
   Friend,
   IncomingFriendRequest,
+  IncomingLetter,
+  IncomingLetterPreview,
   LetterResponse,
   OutgoingFriendRequest,
   TokenResponse,
@@ -36,6 +38,43 @@ export const letter: LetterResponse = {
   sealed_at: null,
   sent_at: null,
   deliver_at: null,
+  read_at: null,
+}
+
+export const sealedLetter: LetterResponse = {
+  ...letter,
+  id: '22222222-2222-2222-2222-222222222222',
+  status: 'sealed',
+  sealed_at: '2026-01-02T12:00:00Z',
+}
+
+export const transitLetter: LetterResponse = {
+  ...letter,
+  id: '33333333-3333-3333-3333-333333333333',
+  status: 'in_transit',
+  sealed_at: '2026-01-02T12:00:00Z',
+  sent_at: '2026-01-03T12:00:00Z',
+  deliver_at: '2026-01-10T12:00:00Z',
+}
+
+/** Письмо в пути глазами получателя: ни текста, ни времени доставки. */
+export const envelope: IncomingLetterPreview = {
+  view: 'incoming_preview',
+  id: letter.id,
+  status: 'in_transit',
+  sender_username: 'boris',
+  wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
+}
+
+/** Доставленное письмо глазами получателя. */
+export const incomingLetter: IncomingLetter = {
+  view: 'incoming',
+  id: letter.id,
+  status: 'delivered',
+  sender_username: 'boris',
+  body: 'Привет',
+  wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
+  delivered_at: '2026-01-05T12:00:00Z',
   read_at: null,
 }
 

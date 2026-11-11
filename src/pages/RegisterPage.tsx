@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/errors'
-import { pathAfterAuth, useSession } from '../features/session'
+import { useSession } from '../features/session'
 import { errorMessage } from '../shared/i18n/apiError'
 import { Button, Field } from '../shared/ui'
 import styles from './auth.module.css'
@@ -21,7 +21,6 @@ export function RegisterPage() {
   const { t } = useTranslation('auth')
   const { register } = useSession()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -53,7 +52,8 @@ export function RegisterPage() {
     setPending(true)
     try {
       await register({ email: trimmedEmail, username, password })
-      navigate(pathAfterAuth(location.state), { replace: true })
+      // Новый пользователь без города: сначала выбор города, потом входящие
+      navigate('/city', { replace: true })
     } catch (error) {
       setServerError(error instanceof ApiError ? error : null)
       setValidation({})

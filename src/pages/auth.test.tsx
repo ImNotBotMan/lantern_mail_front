@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { tokens } from '../test/msw/handlers'
+import { cityName } from '../features/city'
+import i18n from '../shared/i18n'
+import { me, meWithoutCity, moscow, petersburg, tokens } from '../test/msw/handlers'
 import { server } from '../test/msw/server'
 import { renderAt } from '../test/render'
 import { signInForTest, signOutForTest } from '../test/session'
@@ -106,15 +108,14 @@ describe('регистрация', () => {
     expect(calls).toBe(0)
   })
 
-  it('успешная регистрация сразу ведёт внутрь', async () => {
+  it('успешная регистрация ведёт к выбору города', async () => {
     signOutForTest()
+    server.use(http.get('*/api/users/me', () => HttpResponse.json(meWithoutCity)))
     renderAt('/register')
 
     await submitRegister('new@example.com', 'new_user', 'password123')
 
-    expect(
-      await screen.findByRole('heading', { name: t('inbox.title', 'letters') }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: t('title', 'city') })).toBeInTheDocument()
   })
 })
 
@@ -128,9 +129,7 @@ describe('аккаунт', () => {
 
     await userEvent.click(screen.getByRole('button', { name: t('account.logout') }))
 
-    expect(
-      await screen.findByRole('heading', { name: t('login.title') }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: t('login.title') })).toBeInTheDocument()
   })
 
   it('выход на всех требует подтверждения и закрывает сессию', async () => {
@@ -142,9 +141,7 @@ describe('аккаунт', () => {
 
     await userEvent.click(screen.getByRole('button', { name: t('account.logoutAllConfirm') }))
 
-    expect(
-      await screen.findByRole('heading', { name: t('login.title') }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: t('login.title') })).toBeInTheDocument()
   })
 
   it('отмена подтверждения оставляет сессию', async () => {
@@ -156,6 +153,41 @@ describe('аккаунт', () => {
 
     expect(screen.queryByText(t('account.logoutAllQuestion'))).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: t('account.title') })).toBeInTheDocument()
+  })
+
+  it('показывает город профиля и меняет его', async () => {
+    // Город выбран давно, поэтому недельный лимит смены уже истёк
+    server.use(
+      http.get('*/api/users/me', () =>
+        HttpResponse.json({ ...me, city_changed_at: '2020-01-01T12:00:00Z' }),
+      ),
+    )
+    await signInForTest()
+    renderAt('/account')
+
+    expect(await screen.findByText(cityName(moscow, i18n.language))).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: t('change', 'city') }))
+    await userEvent.click(
+      await screen.findByRole('radio', { name: new RegExp(cityName(petersburg, i18n.language)) }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: t('submit', 'city') }))
+
+    expect(await screen.findByText(cityName(petersburg, i18n.language))).toBeInTheDocument()
+  })
+
+  it('в недельный лимит показывает дату смены вместо кнопки', async () => {
+    server.use(
+      http.get('*/api/users/me', () =>
+        HttpResponse.json({ ...me, city_changed_at: new Date().toISOString() }),
+      ),
+    )
+    await signInForTest()
+    renderAt('/account')
+
+    const limit = t('changeLimit', 'city').replace('{{date}}', '')
+    expect(await screen.findByText(new RegExp(limit))).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: t('change', 'city') })).toBeNull()
   })
 
   it('ошибка выхода на всех оставляет пользователя внутри', async () => {

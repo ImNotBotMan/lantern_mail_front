@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import type { APIRequestContext, Browser, BrowserContext, Page } from '@playwright/test'
 
 /** Бэкенд e2e ходит напрямую, минуя Vite-прокси: так пользователи готовятся одним запросом. */
@@ -23,16 +24,45 @@ export function newUser(): E2EUser {
   }
 }
 
-/** Пользователь создаётся через API: сценарий проверяет вход и сессию, а не форму регистрации. */
+/** Москва из сеяного справочника: город обязателен, чтобы продукты вроде письма работали. */
+export const DEFAULT_CITY_ID = 1
+
+/**
+ * Пользователь создаётся через API: сценарий проверяет вход и сессию, а не форму регистрации.
+ * Город проставляется тем же API, что и экран выбора: `cityId: null` оставляет пользователя
+ * без города — так проверяется сам шаг выбора.
+ */
 export async function createUser(
   request: APIRequestContext,
   user: E2EUser = newUser(),
+  cityId: number | null = DEFAULT_CITY_ID,
 ): Promise<E2EUser> {
   const response = await request.post(`${API_BASE_URL}/auth/register`, { data: user })
   if (!response.ok()) {
-    throw new Error(`Не удалось создать пользователя: ${response.status()} ${await response.text()}`)
+    throw new Error(
+      `Не удалось создать пользователя: ${response.status()} ${await response.text()}`,
+    )
+  }
+  if (cityId === null) return user
+
+  const token = ((await response.json()) as { access_token: string }).access_token
+  const withCity = await request.patch(`${API_BASE_URL}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { city_id: cityId },
+  })
+  if (!withCity.ok()) {
+    throw new Error(`Не удалось выбрать город: ${withCity.status()} ${await withCity.text()}`)
   }
   return user
+}
+
+/** Выбор города на экране онбординга: дальше продукт доступен только с городом. */
+export async function chooseCity(page: Page, city: string): Promise<void> {
+  await expect(page.getByRole('heading', { name: 'Выберите город' })).toBeVisible()
+  // Радиокнопка справочника визуально спрятана внутри подписи: пользователь кликает по подписи
+  await page.locator('label', { hasText: city }).click()
+  await expect(page.getByRole('radio', { name: new RegExp(city) })).toBeChecked()
+  await page.getByRole('button', { name: 'Сохранить' }).click()
 }
 
 /** Второй браузерный контекст: свои cookie и localStorage, как другое устройство. */
@@ -41,10 +71,7 @@ export function newContext(browser: Browser): Promise<BrowserContext> {
 }
 
 /** Access-токен через API: подготовка сценариев не зависит от экранов входа. */
-export async function apiAccessToken(
-  request: APIRequestContext,
-  user: E2EUser,
-): Promise<string> {
+export async function apiAccessToken(request: APIRequestContext, user: E2EUser): Promise<string> {
   const response = await request.post(`${API_BASE_URL}/auth/login`, {
     form: { username: user.email, password: user.password },
   })
@@ -78,10 +105,9 @@ export async function befriend(
   const requestId = requests.find((item) => item.sender_username === sender.username)?.id
   if (!requestId) throw new Error('Получатель не видит заявку')
 
-  const accepted = await request.post(
-    `${API_BASE_URL}/friends/requests/${requestId}/accept`,
-    { headers: { Authorization: `Bearer ${recipientToken}` } },
-  )
+  const accepted = await request.post(`${API_BASE_URL}/friends/requests/${requestId}/accept`, {
+    headers: { Authorization: `Bearer ${recipientToken}` },
+  })
   if (!accepted.ok()) {
     throw new Error(`Не удалось принять заявку: ${accepted.status()} ${await accepted.text()}`)
   }
@@ -92,4 +118,7 @@ export async function signIn(page: Page, user: E2EUser): Promise<void> {
   await page.getByLabel('Email').fill(user.email)
   await page.getByLabel('Пароль').fill(user.password)
   await page.getByRole('button', { name: 'Войти', exact: true }).click()
+  // Ждём, пока приложение действительно открылось: после входа с городом это входящие,
+  // без города — шаг выбора. Иначе следующий шаг сценария угонится за навигацией.
+  await expect(page.getByRole('heading', { name: /Входящие|Выберите город/ })).toBeVisible()
 }

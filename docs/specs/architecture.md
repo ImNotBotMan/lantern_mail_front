@@ -32,8 +32,8 @@ pages ──▶ features ──▶ api-client ──▶ API (module-backend-cont
 ```
 src/
   app/       провайдеры (запросы, i18n, тема), роутер, layout
-  pages/     экраны по адресам: вход, входящие, отправленные, письмо, друзья
-  features/  доменные хуки и компоненты: letters, friends, session
+  pages/     экраны по адресам: вход, выбор города, входящие, отправленные, письмо, друзья
+  features/  доменные хуки и компоненты: letters, friends, city, session
   api/       client, endpoints/*, types (формы контракта)
   shared/    ui-кит, i18n-словари, утилиты
 ```
@@ -43,11 +43,13 @@ src/
 - **`module-front-session`** — пара токенов, вход/регистрация/выход, тихий refresh при
   загрузке, guard защищённых экранов.
 - **`module-front-letters`** — экраны писем и действия жизненного цикла.
+- **`module-front-city`** — справочник городов, выбор и смена города, путь письма.
 - **`module-front-friends`** — поиск, заявки, список друзей, unfriend.
 - **`module-front-i18n-ui`** — локализация и базовые визуальные примитивы; прикладных
   зависимостей не имеет, его используют все остальные.
 
 Зависимости между модулями: `letters` и `friends` зависят от `api-client` и `session`;
+`letters` берёт показ пути из `city`, `city` — тоже от `api-client` и `session`;
 `api-client` — от `session` (в сторону токенов) и от контракта; `session` — от `api-client`;
 `i18n-ui` — ни от кого прикладного. Цикл `api-client ↔ session` разорван интерфейсом:
 `api-client` получает токены и колбэк «сессия закрыта» при создании, а не импортирует session.

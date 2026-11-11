@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { errorMessage } from '../../shared/i18n/apiError'
-import { Button, EmptyState, ErrorState, LinkButton, Spinner } from '../../shared/ui'
+import { Button, EmptyState, ErrorState, Spinner } from '../../shared/ui'
 import { sentDateLine } from './dates'
 import { LetterActions } from './LetterActions'
 import styles from './letters.module.css'
@@ -21,9 +21,6 @@ export function SentList() {
   return (
     <section>
       <div className={styles.toolbar}>
-        <LinkButton to={lettersPaths.newLetter} variant="primary">
-          {t('sent.new')}
-        </LinkButton>
         <Button variant="secondary" onClick={() => void refetch()}>
           {t('common:actions.refresh')}
         </Button>

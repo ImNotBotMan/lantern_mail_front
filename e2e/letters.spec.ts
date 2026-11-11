@@ -32,10 +32,8 @@ test('письмо: запечатать, отправить, конверт у 
   const recipient = await createUser(request, newUser(), DEFAULT_CITY_ID + 1)
   await befriend(request, sender, recipient)
 
-  // 1. Отправитель пишет письмо и запечатывает его. «Написать письмо» живёт в отправленных:
-  // в шапку действие переедет после MVP, отдельным изменением дизайна.
+  // 1. Отправитель пишет письмо и запечатывает его. «Написать письмо» — в шапке приложения.
   await signIn(page, sender)
-  await page.getByRole('link', { name: 'Отправленные' }).click()
   await page.getByRole('link', { name: 'Написать письмо' }).click()
   await expect(page.getByRole('heading', { name: 'Новое письмо' })).toBeVisible()
 

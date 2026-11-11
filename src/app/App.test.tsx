@@ -35,6 +35,14 @@ describe('маршруты', () => {
     ).toBeInTheDocument()
   })
 
+  it('шапка показывает «Написать письмо»', async () => {
+    await signInForTest()
+    renderAt('/inbox')
+    expect(
+      await screen.findByRole('link', { name: i18n.t('sent.new', { ns: 'letters' }) }),
+    ).toBeInTheDocument()
+  })
+
   it('анонимного пользователя уводит на вход', async () => {
     signOutForTest()
     renderAt('/inbox')

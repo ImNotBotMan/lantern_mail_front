@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { lettersPaths } from '../../features/letters/paths'
+import { LinkButton } from '../../shared/ui'
 import { LanguageSwitch } from './LanguageSwitch'
 import styles from './AppLayout.module.css'
 
@@ -30,6 +32,9 @@ export function AppLayout() {
             {t('nav.account')}
           </NavLink>
         </nav>
+        <LinkButton to={lettersPaths.newLetter} variant="primary">
+          {t('letters:sent.new')}
+        </LinkButton>
         <span className={styles.spacer} />
         <LanguageSwitch />
       </header>

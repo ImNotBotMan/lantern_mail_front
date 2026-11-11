@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { IncomingLetter, LetterResponse } from '../../api'
+import { CityPath } from './CityPath'
 import { letterDates } from './dates'
 import styles from './letters.module.css'
 import { StatusBadge } from './StatusBadge'
@@ -27,6 +28,8 @@ export function LetterView({ letter }: { letter: Letter }) {
         <span className={styles.party}>{party}</span>
         <StatusBadge status={letter.status} />
       </header>
+
+      <CityPath senderCity={letter.sender_city} recipientCity={letter.recipient_city} />
 
       {dates.length > 0 ? (
         <dl className={styles.dates}>

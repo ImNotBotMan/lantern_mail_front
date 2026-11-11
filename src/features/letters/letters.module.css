@@ -110,6 +110,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Путь письма: снимок городов отправки и доставки. */
+.path {
+  margin: 0 0 var(--space-3);
+  color: var(--color-ink-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
 .dates {
   display: grid;
   grid-template-columns: auto 1fr;

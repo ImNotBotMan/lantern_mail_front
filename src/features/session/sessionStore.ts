@@ -141,6 +141,15 @@ export async function logoutAll(): Promise<void> {
   closeSession()
 }
 
+/**
+ * Обновляет профиль в уже открытой сессии — после изменения данных, например города.
+ * Сессию не открывает и не закрывает: если пользователь анонимен, вызов ничего не делает.
+ */
+export function updateUser(user: UserResponse): void {
+  if (snapshot.status !== 'authenticated') return
+  emit({ ...snapshot, user })
+}
+
 /** Только для тестов: возвращает модуль в состояние «до загрузки страницы». */
 export function resetSessionForTests(): void {
   bootstrapped = false

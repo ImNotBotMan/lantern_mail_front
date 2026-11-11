@@ -16,6 +16,7 @@
     "noRecipient": "no recipient yet",
     "unknownSender": "unknown sender",
     "missing": "No such letter: it may have been deleted or the link is stale",
+    "path": "{{from}} → {{to}}",
     "inTransitHint": "The letter is on its way. The recipient will see it only after delivery — a surprise kept."
   },
   "when": {

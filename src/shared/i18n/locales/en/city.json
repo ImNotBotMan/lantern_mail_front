@@ -1,0 +1,12 @@
+{
+  "title": "Choose a city",
+  "label": "City",
+  "hint": "Your city is needed to calculate the letter's journey. You can change it once a week.",
+  "submit": "Save",
+  "change": "Change",
+  "current": "Your city",
+  "none": "No city chosen",
+  "changeLimit": "You can change your city from {{date}}",
+  "required": "Choose a city first to continue",
+  "saved": "City saved"
+}

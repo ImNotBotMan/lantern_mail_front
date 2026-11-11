@@ -39,6 +39,17 @@ export function RequireAuth() {
   return <Outlet />
 }
 
+/**
+ * Экраны продукта требуют выбранного города: без него письмо не отправить.
+ * Пользователя без города уводит на `/city`; сам `/city` живёт вне этого guard'а.
+ */
+export function CityRequired() {
+  const { user } = useSession()
+
+  if (user?.city == null) return <Navigate to="/city" replace />
+  return <Outlet />
+}
+
 /** Экраны входа: авторизованному там делать нечего. */
 export function GuestOnly() {
   useBootstrapSession()

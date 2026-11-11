@@ -3,13 +3,7 @@
  * (docs/specs/api-contract.md, спека `module-backend-contract`).
  */
 
-export type LetterStatus =
-  | 'draft'
-  | 'sealed'
-  | 'in_transit'
-  | 'delivered'
-  | 'read'
-  | 'cancelled'
+export type LetterStatus = 'draft' | 'sealed' | 'in_transit' | 'delivered' | 'read' | 'cancelled'
 
 export type Relationship = 'none' | 'outgoing_request' | 'incoming_request' | 'friend'
 
@@ -27,6 +21,8 @@ export interface LetterResponse {
   recipient_username: string | null
   body: string
   wrapper: Wrapper
+  sender_city: City | null
+  recipient_city: City | null
   created_at: string
   sealed_at: string | null
   sent_at: string | null
@@ -41,6 +37,8 @@ export interface IncomingLetterPreview {
   status: 'in_transit'
   sender_username: string | null
   wrapper: Wrapper
+  sender_city: City | null
+  recipient_city: City | null
 }
 
 /** Доставленное письмо глазами получателя. */
@@ -51,6 +49,8 @@ export interface IncomingLetter {
   sender_username: string | null
   body: string
   wrapper: Wrapper
+  sender_city: City | null
+  recipient_city: City | null
   delivered_at: string
   read_at: string | null
 }
@@ -71,10 +71,24 @@ export interface RegisterRequest {
   username: string
 }
 
+/** Город справочника: названия на двух языках и координаты для расчёта пути. */
+export interface City {
+  id: number
+  name_ru: string
+  name_en: string
+  country_ru: string
+  country_en: string
+  latitude: number
+  longitude: number
+}
+
 export interface UserResponse {
   id: number
   username: string | null
   created_at: string
+  city: City | null
+  /** Когда город выбран или сменён в последний раз; null — город ещё не выбран. */
+  city_changed_at: string | null
 }
 
 export interface LetterCreate {
@@ -140,6 +154,10 @@ export type ApiErrorCode =
   | 'invalid_state'
   | 'letter_empty'
   | 'recipient_missing'
+  | 'city_not_found'
+  | 'city_change_too_soon'
+  | 'sender_city_missing'
+  | 'recipient_city_missing'
   | 'validation_error'
 
 /** Коды, которые порождает сам клиент: сервер их не присылает. */

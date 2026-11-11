@@ -3,8 +3,9 @@ import type { RouteObject } from 'react-router-dom'
 
 import { AppLayout } from './layout/AppLayout'
 import { AuthLayout } from './layout/AuthLayout'
-import { GuestOnly, RequireAuth } from '../features/session'
+import { CityRequired, GuestOnly, RequireAuth } from '../features/session'
 import { AccountPage } from '../pages/AccountPage'
+import { CityPage } from '../pages/CityPage'
 import { FriendsPage } from '../pages/FriendsPage'
 import { InboxPage } from '../pages/InboxPage'
 import { LetterEditorPage } from '../pages/LetterEditorPage'
@@ -27,17 +28,29 @@ export const routes: RouteObject[] = [
     element: <RequireAuth />,
     children: [
       {
-        element: <AppLayout />,
+        // Шаг выбора города: уже требует входа, но ещё не продукт
+        path: 'city',
+        element: <AuthLayout />,
+        children: [{ index: true, element: <CityPage /> }],
+      },
+      {
+        // Продукт без города недоступен: guard уводит на /city
+        element: <CityRequired />,
         children: [
-          { index: true, element: <Navigate to="/inbox" replace /> },
-          { path: 'inbox', element: <InboxPage /> },
-          { path: 'sent', element: <SentPage /> },
-          { path: 'friends', element: <FriendsPage /> },
-          { path: 'account', element: <AccountPage /> },
-          { path: 'letters/new', element: <LetterEditorPage /> },
-          { path: 'letters/:id', element: <LetterPage /> },
-          { path: 'letters/:id/edit', element: <LetterEditorPage /> },
-          { path: '*', element: <NotFoundPage /> },
+          {
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <Navigate to="/inbox" replace /> },
+              { path: 'inbox', element: <InboxPage /> },
+              { path: 'sent', element: <SentPage /> },
+              { path: 'friends', element: <FriendsPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'letters/new', element: <LetterEditorPage /> },
+              { path: 'letters/:id', element: <LetterPage /> },
+              { path: 'letters/:id/edit', element: <LetterEditorPage /> },
+              { path: '*', element: <NotFoundPage /> },
+            ],
+          },
         ],
       },
     ],

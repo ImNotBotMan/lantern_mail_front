@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 
 import type {
+  City,
   Friend,
   IncomingFriendRequest,
   IncomingLetter,
@@ -21,10 +22,41 @@ export const tokens: TokenResponse = {
   expires_in: 900,
 }
 
+export const moscow: City = {
+  id: 1,
+  name_ru: 'Москва',
+  name_en: 'Moscow',
+  country_ru: 'Россия',
+  country_en: 'Russia',
+  latitude: 55.7558,
+  longitude: 37.6173,
+}
+
+export const petersburg: City = {
+  id: 2,
+  name_ru: 'Санкт-Петербург',
+  name_en: 'Saint Petersburg',
+  country_ru: 'Россия',
+  country_en: 'Russia',
+  latitude: 59.9343,
+  longitude: 30.3351,
+}
+
+export const cities: City[] = [moscow, petersburg]
+
 export const me: UserResponse = {
   id: 1,
   username: 'me_user',
   created_at: '2026-01-01T12:00:00Z',
+  city: moscow,
+  city_changed_at: '2026-01-01T12:00:00Z',
+}
+
+/** Тот же профиль до выбора города: с него начинается новый пользователь. */
+export const meWithoutCity: UserResponse = {
+  ...me,
+  city: null,
+  city_changed_at: null,
 }
 
 export const letter: LetterResponse = {
@@ -34,6 +66,8 @@ export const letter: LetterResponse = {
   recipient_username: 'anna',
   body: 'Привет',
   wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
+  sender_city: null,
+  recipient_city: null,
   created_at: '2026-01-01T12:00:00Z',
   sealed_at: null,
   sent_at: null,
@@ -52,6 +86,8 @@ export const transitLetter: LetterResponse = {
   ...letter,
   id: '33333333-3333-3333-3333-333333333333',
   status: 'in_transit',
+  sender_city: moscow,
+  recipient_city: petersburg,
   sealed_at: '2026-01-02T12:00:00Z',
   sent_at: '2026-01-03T12:00:00Z',
   deliver_at: '2026-01-10T12:00:00Z',
@@ -64,6 +100,8 @@ export const envelope: IncomingLetterPreview = {
   status: 'in_transit',
   sender_username: 'boris',
   wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
+  sender_city: moscow,
+  recipient_city: petersburg,
 }
 
 /** Доставленное письмо глазами получателя. */
@@ -74,6 +112,8 @@ export const incomingLetter: IncomingLetter = {
   sender_username: 'boris',
   body: 'Привет',
   wrapper: { postcard_id: null, seal_id: null, stamp_id: null },
+  sender_city: moscow,
+  recipient_city: petersburg,
   delivered_at: '2026-01-05T12:00:00Z',
   read_at: null,
 }
@@ -107,7 +147,10 @@ export const searchResult: UserSearchResult = {
 }
 
 export function unauthorized() {
-  return HttpResponse.json({ error: 'not_authenticated', message: 'Not authenticated' }, { status: 401 })
+  return HttpResponse.json(
+    { error: 'not_authenticated', message: 'Not authenticated' },
+    { status: 401 },
+  )
 }
 
 export function sessionRejected() {
@@ -126,6 +169,12 @@ export const handlers = [
   http.post(`${BASE}/auth/logout-all`, () => new HttpResponse(null, { status: 204 })),
 
   http.get(`${BASE}/users/me`, () => HttpResponse.json(me)),
+  http.patch(`${BASE}/users/me`, async ({ request }) => {
+    const { city_id } = (await request.json()) as { city_id: number }
+    const city = cities.find((item) => item.id === city_id) ?? null
+    return HttpResponse.json({ ...me, city, city_changed_at: '2026-02-01T12:00:00Z' })
+  }),
+  http.get(`${BASE}/cities`, () => HttpResponse.json(cities)),
   http.get(`${BASE}/users/search`, ({ request }) => {
     const query = new URL(request.url).searchParams.get('q') ?? ''
     if (query.length < 3) {

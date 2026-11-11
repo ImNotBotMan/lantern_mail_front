@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { createUser, newUser, signIn } from './helpers'
+import { chooseCity, createUser, newUser, signIn } from './helpers'
 
 test('анонимного уводит на вход и после входа возвращает на запрошенный адрес', async ({
   page,
@@ -19,7 +19,7 @@ test('анонимного уводит на вход и после входа �
   await expect(page.getByText(user.username)).toBeVisible()
 })
 
-test('регистрация сразу вводит в приложение', async ({ page }) => {
+test('регистрация ведёт к выбору города, потом в приложение', async ({ page }) => {
   const user = newUser()
 
   await page.goto('/register')
@@ -28,6 +28,7 @@ test('регистрация сразу вводит в приложение', a
   await page.getByLabel('Пароль').fill(user.password)
   await page.getByRole('button', { name: 'Создать аккаунт' }).click()
 
+  await chooseCity(page, 'Санкт-Петербург')
   await expect(page.getByRole('heading', { name: 'Входящие' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Аккаунт' }).click()

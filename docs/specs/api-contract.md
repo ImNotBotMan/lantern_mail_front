@@ -36,6 +36,9 @@ tags: [contract, api]
 `friend_request_to_self` и `recipient_not_found` — 422, тело заявки принимает только
 `recipient_username`.
 
+Города требуют ревизии Alembic `c9e4f7a12b58` (`uv run alembic upgrade head`): без неё
+`/cities` и `PATCH /users/me` отвечают 500, а письма — 500 вместо отправки.
+
 Ответы, читающие таблицу `friendships` (`/friends`, `/friends/requests/*`, `/users/search`
 с непустым результатом), требуют ревизии Alembic `b7d3e2a91c04` (`uv run alembic upgrade head`):
 на прежней ревизии код уже новый, а схема таблицы старая, и такие запросы отвечают 500.
@@ -81,10 +84,20 @@ tags: [contract, api]
 | `POST /auth/refresh` | JSON `{ refresh_token }` | 200 `TokenResponse` (новая пара) |
 | `POST /auth/logout` | JSON `{ refresh_token }` | 204 |
 | `POST /auth/logout-all` | — (нужен access-токен) | 204 |
-| `GET /users/me` | — | 200 `{ id, username, created_at }` |
+| `GET /users/me` | — | 200 `UserResponse` |
+| `PATCH /users/me` | JSON `{ city_id }` (только город; лишнее поле — 422) | 200 `UserResponse` |
+| `GET /cities` | — | 200 `City[]` — справочник по алфавиту |
 
 Логин — единственный эндпоинт с form-encoded телом (так его отдаёт `OAuth2PasswordRequestForm`);
 остальные — JSON.
+
+```
+UserResponse  { id, username | null, created_at, city: City | null, city_changed_at | null }
+City          { id, name_ru, name_en, country_ru, country_en, latitude, longitude }
+```
+
+`city_changed_at` — когда город выбран или сменён в последний раз; от него клиент
+считает, с какой даты смена снова доступна. `null` в `city` — город ещё не выбран.
 
 ### Письма
 
@@ -109,10 +122,16 @@ IncomingLetterPreview     view: "incoming_preview"  — status: "in_transit", se
 IncomingLetter            view: "incoming"          — status: "delivered" | "read", текст, delivered_at, read_at
 ```
 
-`LetterResponse`: `{ view, id, status, recipient_username | null, body, wrapper, created_at,
-sealed_at | null, sent_at | null, deliver_at | null, read_at | null }`.
-`IncomingLetter`: `{ view, id, status, sender_username | null, body, wrapper, delivered_at, read_at | null }`.
-`IncomingLetterPreview`: `{ view, id, status: "in_transit", sender_username | null, wrapper }`.
+`LetterResponse`: `{ view, id, status, recipient_username | null, body, wrapper, sender_city | null,
+recipient_city | null, created_at, sealed_at | null, sent_at | null, deliver_at | null, read_at | null }`.
+`IncomingLetter`: `{ view, id, status, sender_username | null, body, wrapper, sender_city | null,
+recipient_city | null, delivered_at, read_at | null }`.
+`IncomingLetterPreview`: `{ view, id, status: "in_transit", sender_username | null, wrapper,
+sender_city | null, recipient_city | null }`.
+
+`sender_city` / `recipient_city` — **снимок** городов на момент отправки: у черновика и
+запечатанного письма их нет, у летящего и доставленного — есть, если оба пользователя выбрали
+город. Смена города после отправки путь уже летящего письма не меняет.
 `wrapper`: `{ postcard_id | null, seal_id | null, stamp_id | null }`.
 
 `status` ∈ `draft | sealed | in_transit | delivered | read | cancelled`. Статус вычисляется
@@ -165,8 +184,8 @@ UserSearchResult        { username, relationship, request_id | null }
 | 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token` |
 | 403 | `forbidden` |
 | 404 | `not_found`, `user_not_found`, `friend_request_not_found` |
-| 409 | `email_taken`, `username_taken`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing` |
-| 422 | `recipient_not_found`, `friend_request_to_self`, `validation_error` (с `details`) |
+| 409 | `email_taken`, `username_taken`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
+| 422 | `recipient_not_found`, `friend_request_to_self`, `city_not_found`, `validation_error` (с `details`) |
 
 `invalid_refresh_token` на `/auth/refresh` означает, что сессия закрыта (истекла или
 украдена) — это единственный ответ, по которому клиент разлогинивается.
@@ -180,3 +199,10 @@ UserSearchResult        { username, relationship, request_id | null }
   а не решает, что скрыть.
 - Допустимость действия: сервер отвечает 409 `invalid_state`, если переход недопустим
   в текущем статусе.
+- Город обязателен для отправки: `send` без города у отправителя — 409 `sender_city_missing`,
+  без города у получателя — 409 `recipient_city_missing`. Клиент ведёт на шаг выбора города,
+  но решает это не он: отказ приходит от сервера.
+- Смена города — не чаще раза в неделю от `city_changed_at`; повторная отправка того же
+  города — успех без изменения даты. Нарушение — 409 `city_change_too_soon`; клиент показывает лимит
+  заранее, но ответ сервера всё равно показывает.
+- Какой город назвать на языке интерфейса, клиент решает сам: справочник отдаёт обе колонки.

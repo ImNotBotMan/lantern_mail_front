@@ -1,13 +1,22 @@
 import { expect, test } from '@playwright/test'
 
-import { API_BASE_URL, apiAccessToken, befriend, createUser, newContext, signIn } from './helpers'
+import {
+  API_BASE_URL,
+  apiAccessToken,
+  befriend,
+  createUser,
+  DEFAULT_CITY_ID,
+  newContext,
+  newUser,
+  signIn,
+} from './helpers'
 
 const LETTER_BODY = 'Здравствуй, друг! Пишу тебе первым письмом.'
 
 /**
- * Доставка не мгновенная: ожидание задаётся `DELIVERY_DELAY_SECONDS` бэкенда. С задержкой
- * 2 секунды прогон занимает пару секунд, с 60 — минуту, поэтому тест ждёт доставку опросом
- * API, а не фиксированной паузой.
+ * Доставка не мгновенная: ожидание зависит от городов и `DELIVERY_MIN_SECONDS`/
+ * `DELIVERY_MAX_SECONDS` бэкенда. С константами в пару секунд прогон занимает пару секунд,
+ * с часовыми — часы, поэтому тест ждёт доставку опросом API, а не фиксированной паузой.
  */
 const DELIVERY_TIMEOUT_MS = Number(process.env.E2E_DELIVERY_TIMEOUT_MS ?? 150_000)
 
@@ -18,8 +27,9 @@ test('письмо: запечатать, отправить, конверт у 
 }) => {
   test.setTimeout(DELIVERY_TIMEOUT_MS + 60_000)
 
-  const sender = await createUser(request)
-  const recipient = await createUser(request)
+  // Разные города: путь письма виден на конверте и в самом письме
+  const sender = await createUser(request, newUser(), DEFAULT_CITY_ID)
+  const recipient = await createUser(request, newUser(), DEFAULT_CITY_ID + 1)
   await befriend(request, sender, recipient)
 
   // 1. Отправитель пишет письмо и запечатывает его. «Написать письмо» живёт в отправленных:
@@ -54,6 +64,7 @@ test('письмо: запечатать, отправить, конверт у 
 
     await recipientPage.getByRole('link', { name: sender.username }).click()
     await expect(recipientPage.getByText(/Письмо в пути/)).toBeVisible()
+    await expect(recipientPage.getByText('Москва → Санкт-Петербург')).toBeVisible()
     await expect(recipientPage.getByText(LETTER_BODY)).toHaveCount(0)
 
     // 4. Доставку определяет время: статус считается из дат, отдельного события у клиента нет.

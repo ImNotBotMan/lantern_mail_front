@@ -26,7 +26,9 @@ export function useOutgoingRequests() {
  * Все действия с заявками меняют одну и ту же пару «друзья ↔ заявки», поэтому любая
  * из них сбрасывает корень кэша `['friends']` — вместе с поиском и обеими секциями.
  */
-function useFriendRequestMutation<TVariables>(mutationFn: (variables: TVariables) => Promise<unknown>) {
+function useFriendRequestMutation<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<unknown>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({

@@ -27,9 +27,7 @@ export function InboxList() {
 
       {isPending ? <Spinner /> : null}
 
-      {isError ? (
-        <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} />
-      ) : null}
+      {isError ? <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} /> : null}
 
       {data && data.length === 0 ? <EmptyState message={t('inbox.empty')} /> : null}
 

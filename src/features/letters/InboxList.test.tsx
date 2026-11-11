@@ -59,7 +59,9 @@ describe('входящие', () => {
     inboxServer([incomingLetter, readIncomingLetter])
     await renderInbox()
 
-    expect(await screen.findByText(whenLine('delivered', incomingLetter.delivered_at))).toBeInTheDocument()
+    expect(
+      await screen.findByText(whenLine('delivered', incomingLetter.delivered_at)),
+    ).toBeInTheDocument()
     expect(screen.getByText(label('status.delivered'))).toBeInTheDocument()
 
     expect(
@@ -100,8 +102,9 @@ describe('входящие', () => {
     await renderInbox()
 
     const main = within(screen.getByRole('main'))
-    expect(
-      await main.findByRole('link', { name: sender }),
-    ).toHaveAttribute('href', `/letters/${envelope.id}`)
+    expect(await main.findByRole('link', { name: sender })).toHaveAttribute(
+      'href',
+      `/letters/${envelope.id}`,
+    )
   })
 })

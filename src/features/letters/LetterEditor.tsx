@@ -12,7 +12,12 @@ import { LetterView } from './LetterView'
 import styles from './letters.module.css'
 import { lettersPaths } from './paths'
 import { RecipientSelect } from './RecipientSelect'
-import { useCreateLetter, useDeleteLetter, useSealLetter, useUpdateLetter } from './useLetterActions'
+import {
+  useCreateLetter,
+  useDeleteLetter,
+  useSealLetter,
+  useUpdateLetter,
+} from './useLetterActions'
 import { useLetter } from './useLetters'
 
 /** Предел тела письма в контракте бэкенда; дублируем, чтобы ошибку не ждать от сервера. */
@@ -153,11 +158,7 @@ export function LetterEditor({ letterId }: LetterEditorProps) {
       <section>
         <h1>{t('editor.title')}</h1>
         <p className={styles.note}>{t('editor.notEditable')}</p>
-        {letter.view === 'incoming' ? (
-          <LetterView letter={letter} />
-        ) : (
-          <Envelope letter={letter} />
-        )}
+        {letter.view === 'incoming' ? <LetterView letter={letter} /> : <Envelope letter={letter} />}
       </section>
     )
   }

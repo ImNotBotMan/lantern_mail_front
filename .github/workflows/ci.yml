@@ -1,6 +1,6 @@
 name: CI
 
-# Гоняем на каждый PR и на push в main: типы, юнит-тесты, сборка.
+# Гоняем на каждый PR и на push в main: типы, линт, формат, юнит-тесты, сборка.
 # e2e (Playwright) сюда не входит: сценарии ходят в живой backend, а его репозиторий
 # приватный — фронтовый CI не может его выкачать без отдельного токена.
 on:
@@ -30,6 +30,12 @@ jobs:
 
       - name: Типы
         run: npm run typecheck
+
+      - name: Линт
+        run: npm run lint
+
+      - name: Формат
+        run: npm run format:check
 
       - name: Юнит- и компонентные тесты
         run: npm test

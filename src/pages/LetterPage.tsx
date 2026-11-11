@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 
 import { ApiError } from '../api/errors'
-import {
-  Envelope,
-  LetterActions,
-  LetterView,
-  lettersPaths,
-  useLetter,
-} from '../features/letters'
+import { Envelope, LetterActions, LetterView, lettersPaths, useLetter } from '../features/letters'
 import { useReadLetter } from '../features/letters/useLetterActions'
 import { errorMessage } from '../shared/i18n/apiError'
 import { Button, LinkButton, Spinner } from '../shared/ui'
@@ -57,11 +51,7 @@ export function LetterPage() {
   return (
     <section>
       <h1>{t('letter.title')}</h1>
-      {data.view === 'incoming_preview' ? (
-        <Envelope letter={data} />
-      ) : (
-        <LetterView letter={data} />
-      )}
+      {data.view === 'incoming_preview' ? <Envelope letter={data} /> : <LetterView letter={data} />}
       {data.view === 'sender' ? <LetterActions letter={data} /> : null}
     </section>
   )

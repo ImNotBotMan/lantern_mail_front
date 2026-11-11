@@ -106,7 +106,9 @@ describe('экран письма', () => {
     const letter = await findLetterArticle()
     expect(letter.getByText('Привет')).toBeInTheDocument()
     // Слово статуса и подпись даты совпадают — проверяем сам момент доставки.
-    expect(letter.getByText(formatDate(incomingLetter.delivered_at, i18n.language))).toBeInTheDocument()
+    expect(
+      letter.getByText(formatDate(incomingLetter.delivered_at, i18n.language)),
+    ).toBeInTheDocument()
   })
 
   it('отсутствующее письмо объясняет 404 и предлагает списки', async () => {
@@ -134,7 +136,9 @@ describe('экран письма', () => {
     expect(await screen.findByText(t('not_friends', 'errors'))).toBeInTheDocument()
     const letter = within(screen.getByRole('article'))
     expect(
-      letter.getByText(formatDate(sealedLetter.sealed_at ?? sealedLetter.created_at, i18n.language)),
+      letter.getByText(
+        formatDate(sealedLetter.sealed_at ?? sealedLetter.created_at, i18n.language),
+      ),
     ).toBeInTheDocument()
   })
 

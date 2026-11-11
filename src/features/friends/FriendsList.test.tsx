@@ -60,9 +60,7 @@ async function renderFriends() {
 
 async function confirmRemoval(list: ReturnType<typeof within>) {
   await userEvent.click(list.getByRole('button', { name: t('list.unfriend', 'friends') }))
-  await userEvent.click(
-    list.getByRole('button', { name: t('list.unfriendConfirmYes', 'friends') }),
-  )
+  await userEvent.click(list.getByRole('button', { name: t('list.unfriendConfirmYes', 'friends') }))
 }
 
 describe('список друзей', () => {

@@ -115,8 +115,9 @@ export function LetterActions({ letter, scope = 'letter' }: LetterActionsProps) 
         <Button
           variant="secondary"
           onClick={() =>
-            void act(() => unseal.mutateAsync(letter.id), () =>
-              navigate(lettersPaths.editLetter(letter.id)),
+            void act(
+              () => unseal.mutateAsync(letter.id),
+              () => navigate(lettersPaths.editLetter(letter.id)),
             )
           }
           disabled={busy}

@@ -27,9 +27,7 @@ export function RecipientSelect({ value, onChange, disabled }: RecipientSelectPr
 
       {isPending ? <Spinner /> : null}
 
-      {isError ? (
-        <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} />
-      ) : null}
+      {isError ? <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} /> : null}
 
       {!isPending && !isError && options.length === 0 ? (
         <div className={styles.noRecipients}>

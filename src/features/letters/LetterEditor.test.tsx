@@ -65,7 +65,11 @@ function editorServer(initial: LetterResponse | null = null) {
       state.seals.push(id)
       const current = state.byId.get(id)
       if (!current) return notFound()
-      const sealed = { ...current, status: 'sealed', sealed_at: '2026-01-02T12:00:00Z' } as AnyLetter
+      const sealed = {
+        ...current,
+        status: 'sealed',
+        sealed_at: '2026-01-02T12:00:00Z',
+      } as AnyLetter
       state.byId.set(id, sealed)
       return HttpResponse.json(sealed)
     }),
@@ -93,9 +97,7 @@ describe('редактор письма', () => {
 
     expect(await screen.findByLabelText('@anna')).toBeInTheDocument()
     expect(
-      screen.getByLabelText(
-        i18n.t('editor.selfOption', { ns: 'letters', username: '@me_user' }),
-      ),
+      screen.getByLabelText(i18n.t('editor.selfOption', { ns: 'letters', username: '@me_user' })),
     ).toBeInTheDocument()
   })
 
@@ -135,9 +137,7 @@ describe('редактор письма', () => {
 
     await userEvent.click(seal)
 
-    expect(
-      await screen.findByRole('heading', { name: label('letter.title') }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: label('letter.title') })).toBeInTheDocument()
     expect(await screen.findByText('Привет')).toBeInTheDocument()
     expect(state.seals).toEqual(['created-1'])
   })
@@ -170,8 +170,6 @@ describe('редактор письма', () => {
     await userEvent.click(friendsLink)
     await userEvent.click(await screen.findByRole('button', { name: label('editor.unsavedLeave') }))
 
-    expect(
-      await screen.findByRole('heading', { name: t('title', 'friends') }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: t('title', 'friends') })).toBeInTheDocument()
   })
 })

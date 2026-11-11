@@ -84,10 +84,14 @@ describe('api-client', () => {
 
     server.use(
       http.get('*/api/users/me', ({ request }) =>
-        request.headers.get('Authorization') === 'Bearer fresh' ? HttpResponse.json(ME) : unauthorized(),
+        request.headers.get('Authorization') === 'Bearer fresh'
+          ? HttpResponse.json(ME)
+          : unauthorized(),
       ),
       http.get('*/api/letters/sent', ({ request }) =>
-        request.headers.get('Authorization') === 'Bearer fresh' ? HttpResponse.json([]) : unauthorized(),
+        request.headers.get('Authorization') === 'Bearer fresh'
+          ? HttpResponse.json([])
+          : unauthorized(),
       ),
     )
 

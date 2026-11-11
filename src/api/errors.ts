@@ -38,7 +38,11 @@ export function errorFromResponse(status: number, body: unknown): ApiError {
   if (parsed && typeof parsed.error === 'string') {
     return new ApiError(status, parsed.error, parsed.message ?? parsed.error, parsed.details)
   }
-  return new ApiError(status, status >= 500 ? 'server_error' : 'unknown', FALLBACK_MESSAGES[status] ?? 'Request failed')
+  return new ApiError(
+    status,
+    status >= 500 ? 'server_error' : 'unknown',
+    FALLBACK_MESSAGES[status] ?? 'Request failed',
+  )
 }
 
 export function networkError(cause: unknown): ApiError {

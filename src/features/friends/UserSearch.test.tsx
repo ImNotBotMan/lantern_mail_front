@@ -35,7 +35,11 @@ function searchServer(results: UserSearchResult[] | 'error' = []) {
         )
       }
       return HttpResponse.json(
-        { id: '44444444-4444-4444-4444-444444444444', recipient_username: 'anna', created_at: '2026-01-03T12:00:00Z' },
+        {
+          id: '44444444-4444-4444-4444-444444444444',
+          recipient_username: 'anna',
+          created_at: '2026-01-03T12:00:00Z',
+        },
         { status: 201 },
       )
     }),
@@ -183,7 +187,9 @@ describe('поиск пользователей', () => {
     await userEvent.click(
       section.getByRole('button', { name: t('list.unfriendConfirmYes', 'friends') }),
     )
-    expect(await section.findByRole('button', { name: t('search.add', 'friends') })).toBeInTheDocument()
+    expect(
+      await section.findByRole('button', { name: t('search.add', 'friends') }),
+    ).toBeInTheDocument()
   })
 
   it('«Отозвать» снимает свою заявку', async () => {

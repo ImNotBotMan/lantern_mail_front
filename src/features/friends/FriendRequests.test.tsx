@@ -31,7 +31,11 @@ type IncomingOutcome = 'ok' | 'error'
  * Сервер заявок в памяти: принятие переносит заявку в друзья, отклонение и отзыв удаляют
  * запись — как на бэкенде, у пары всегда одно состояние.
  */
-function requestsServer(incomingList: IncomingFriendRequest[], outgoingList: OutgoingFriendRequest[], outcome: IncomingOutcome = 'ok') {
+function requestsServer(
+  incomingList: IncomingFriendRequest[],
+  outgoingList: OutgoingFriendRequest[],
+  outcome: IncomingOutcome = 'ok',
+) {
   const state = {
     incoming: [...incomingList],
     outgoing: [...outgoingList],

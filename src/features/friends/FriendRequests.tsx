@@ -52,13 +52,9 @@ export function IncomingRequests() {
 
       {isPending ? <Spinner /> : null}
 
-      {isError ? (
-        <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} />
-      ) : null}
+      {isError ? <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} /> : null}
 
-      {data && data.length === 0 ? (
-        <EmptyState message={t('requests.incomingEmpty')} />
-      ) : null}
+      {data && data.length === 0 ? <EmptyState message={t('requests.incomingEmpty')} /> : null}
 
       {data && data.length > 0 ? (
         <ul className={styles.list}>
@@ -128,13 +124,9 @@ export function OutgoingRequests() {
 
       {isPending ? <Spinner /> : null}
 
-      {isError ? (
-        <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} />
-      ) : null}
+      {isError ? <ErrorState message={errorMessage(error)} onRetry={() => void refetch()} /> : null}
 
-      {data && data.length === 0 ? (
-        <EmptyState message={t('requests.outgoingEmpty')} />
-      ) : null}
+      {data && data.length === 0 ? <EmptyState message={t('requests.outgoingEmpty')} /> : null}
 
       {data && data.length > 0 ? (
         <ul className={styles.list}>

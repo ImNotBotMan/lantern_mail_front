@@ -40,7 +40,11 @@ function SearchResultRow({ result }: { result: UserSearchResult }) {
   const [rowError, setRowError] = useState<unknown>(null)
 
   const mutating =
-    send.isPending || withdraw.isPending || accept.isPending || decline.isPending || unfriend.isPending
+    send.isPending ||
+    withdraw.isPending ||
+    accept.isPending ||
+    decline.isPending ||
+    unfriend.isPending
 
   async function act(action: () => Promise<unknown>) {
     setRowError(null)
@@ -55,7 +59,10 @@ function SearchResultRow({ result }: { result: UserSearchResult }) {
     switch (result.relationship) {
       case 'none':
         return (
-          <Button onClick={() => void act(() => send.mutateAsync(result.username))} disabled={mutating}>
+          <Button
+            onClick={() => void act(() => send.mutateAsync(result.username))}
+            disabled={mutating}
+          >
             {t('search.add')}
           </Button>
         )
@@ -94,7 +101,9 @@ function SearchResultRow({ result }: { result: UserSearchResult }) {
         if (confirming) {
           return (
             <div className={styles.confirm}>
-              <p className={styles.confirmText}>{t('list.unfriendConfirm', { username: result.username })}</p>
+              <p className={styles.confirmText}>
+                {t('list.unfriendConfirm', { username: result.username })}
+              </p>
               <div className={styles.confirmActions}>
                 <Button
                   variant="danger"
@@ -103,7 +112,11 @@ function SearchResultRow({ result }: { result: UserSearchResult }) {
                 >
                   {t('list.unfriendConfirmYes')}
                 </Button>
-                <Button variant="secondary" disabled={mutating} onClick={() => setConfirming(false)}>
+                <Button
+                  variant="secondary"
+                  disabled={mutating}
+                  onClick={() => setConfirming(false)}
+                >
                   {t('common:actions.cancel')}
                 </Button>
               </div>
@@ -139,11 +152,7 @@ export function UserSearch() {
   const { state, query } = useUserSearch(input)
 
   const hint =
-    state === 'tooShort'
-      ? t('search.hint')
-      : state === 'invalid'
-        ? t('search.invalid')
-        : undefined
+    state === 'tooShort' ? t('search.hint') : state === 'invalid' ? t('search.invalid') : undefined
 
   return (
     <section className={styles.section}>

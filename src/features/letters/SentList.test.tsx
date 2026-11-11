@@ -118,9 +118,7 @@ describe('отправленные', () => {
     await userEvent.click(await screen.findByRole('button', { name: label('editor.send') }))
     await userEvent.click(screen.getByRole('button', { name: label('editor.sendConfirmYes') }))
 
-    expect(
-      await screen.findByText(t('not_friends', 'errors')),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(t('not_friends', 'errors'))).toBeInTheDocument()
     expect(screen.getByText(label('status.sealed'))).toBeInTheDocument()
   })
 

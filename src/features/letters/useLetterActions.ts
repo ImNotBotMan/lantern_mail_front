@@ -8,7 +8,9 @@ import { lettersQueryKey } from './queryKeys'
  * Любое действие меняет статус письма, а статус виден и в отправленных, и на экране письма.
  * Поэтому сбрасываем весь корень `['letters']`, а не отдельный ключ.
  */
-function useLetterMutation<TData, TVariables>(mutationFn: (variables: TVariables) => Promise<TData>) {
+function useLetterMutation<TData, TVariables>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({

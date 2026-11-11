@@ -104,7 +104,7 @@ export class ApiClient {
   }
 
   private async toError(response: Response): Promise<ApiError> {
-    let body: unknown = null
+    let body: unknown
     try {
       body = await response.json()
     } catch {

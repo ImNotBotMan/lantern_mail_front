@@ -31,6 +31,10 @@ export const DEFAULT_CITY_ID = 1
  * Пользователь создаётся через API: сценарий проверяет вход и сессию, а не форму регистрации.
  * Город проставляется тем же API, что и экран выбора: `cityId: null` оставляет пользователя
  * без города — так проверяется сам шаг выбора.
+ *
+ * Регистрация токенов не выдаёт (202): без подтверждённого адреса входа нет. Прогон идёт
+ * против бэкенда без Firebase — там фейковый провайдер подтверждает адрес сам, поэтому
+ * сразу за регистрацией идёт обычный вход.
  */
 export async function createUser(
   request: APIRequestContext,
@@ -38,14 +42,14 @@ export async function createUser(
   cityId: number | null = DEFAULT_CITY_ID,
 ): Promise<E2EUser> {
   const response = await request.post(`${API_BASE_URL}/auth/register`, { data: user })
-  if (!response.ok()) {
+  if (response.status() !== 202) {
     throw new Error(
       `Не удалось создать пользователя: ${response.status()} ${await response.text()}`,
     )
   }
   if (cityId === null) return user
 
-  const token = ((await response.json()) as { access_token: string }).access_token
+  const token = await apiAccessToken(request, user)
   const withCity = await request.patch(`${API_BASE_URL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
     data: { city_id: cityId },

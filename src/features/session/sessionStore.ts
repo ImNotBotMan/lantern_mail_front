@@ -3,7 +3,13 @@ import type { SessionBridge } from '../../api/client'
 import { authApi } from '../../api/endpoints/auth'
 import { usersApi } from '../../api/endpoints/users'
 import { ApiError } from '../../api/errors'
-import type { RegisterRequest, TokenResponse, UserResponse } from '../../api/types'
+import type {
+  RegisterRequest,
+  RegisterResponse,
+  TokenResponse,
+  UserResponse,
+} from '../../api/types'
+import { signInWithGoogle } from '../../shared/firebase'
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './tokens'
 
 export type SessionStatus = 'loading' | 'authenticated' | 'anonymous'
@@ -120,8 +126,44 @@ export async function login(email: string, password: string): Promise<void> {
   await startSession(await authApi.login(email, password))
 }
 
-export async function register(data: RegisterRequest): Promise<void> {
-  await startSession(await authApi.register(data))
+/**
+ * Вход через Google: окно Firebase даёт ID-токен, сервер меняет его на нашу пару.
+ * Ошибки окна (закрыл, заблокировано) — `GoogleSignInError`, отказ сервера — `ApiError`.
+ */
+export async function loginWithGoogle(): Promise<void> {
+  await startSession(await authApi.firebaseLogin(await signInWithGoogle()))
+}
+
+/**
+ * Регистрация сессию не открывает: без подтверждённого адреса токенов не выдаёт никто.
+ * Экран показывает «проверьте почту» и адрес, на который ушло письмо.
+ */
+export async function register(data: RegisterRequest): Promise<RegisterResponse> {
+  return authApi.register(data)
+}
+
+/**
+ * Письмо подтверждения: сервер отправляет его на каждой попытке входа без подтверждения,
+ * поэтому отдельного эндпоинта нет — повторяем вход.
+ *
+ * `verified` — адрес уже подтвердили, и вход состоялся: экран уводит в продукт.
+ */
+export async function resendVerification(
+  email: string,
+  password: string,
+): Promise<'sent' | 'verified'> {
+  try {
+    await login(email, password)
+    return 'verified'
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'email_not_verified') return 'sent'
+    throw error
+  }
+}
+
+/** Сброс пароля: письмо и страницу смены отдаёт Firebase, наш API только просит его отправить. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await authApi.requestPasswordReset(email)
 }
 
 /**

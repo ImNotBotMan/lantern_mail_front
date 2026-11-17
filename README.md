@@ -15,6 +15,10 @@ npm run dev        # http://localhost:5173, /api проксируется на :
 
 - `VITE_API_BASE_URL` — базовый адрес API (по умолчанию `/api`).
 - `API_PROXY_TARGET` — адрес бэкенда для dev-прокси (по умолчанию `http://localhost:8000`).
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`,
+  `VITE_FIREBASE_APP_ID` — web-конфиг проекта Firebase (Firebase Console → Project settings →
+  Your apps). Без них кнопка «Продолжить с Google» не показывается; вход по паролю, регистрация
+  и сброс пароля работают через наш API и Firebase на бэкенде.
 
 ## Скрипты
 

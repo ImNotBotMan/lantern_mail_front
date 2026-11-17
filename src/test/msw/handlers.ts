@@ -8,12 +8,19 @@ import type {
   IncomingLetterPreview,
   LetterResponse,
   OutgoingFriendRequest,
+  RegisterResponse,
   TokenResponse,
   UserResponse,
   UserSearchResult,
 } from '../../api/types'
 
 const BASE = '*/api'
+
+/** Регистрация больше не выдаёт токены: адрес нужно подтвердить письмом. */
+export const verificationRequired: RegisterResponse = {
+  email: 'new@example.com',
+  verification_required: true,
+}
 
 export const tokens: TokenResponse = {
   access_token: 'access-1',
@@ -57,6 +64,12 @@ export const meWithoutCity: UserResponse = {
   ...me,
   city: null,
   city_changed_at: null,
+}
+
+/** Профиль после входа через Google: имя ещё не выбрано. */
+export const meWithoutUsername: UserResponse = {
+  ...me,
+  username: null,
 }
 
 export const letter: LetterResponse = {
@@ -163,15 +176,21 @@ export function sessionRejected() {
 /** Хендлеры по формам контракта: тесты клиента не зависят от реализации бэкенда. */
 export const handlers = [
   http.post(`${BASE}/auth/login`, () => HttpResponse.json(tokens)),
-  http.post(`${BASE}/auth/register`, () => HttpResponse.json(tokens, { status: 201 })),
+  http.post(`${BASE}/auth/register`, () =>
+    HttpResponse.json(verificationRequired, { status: 202 }),
+  ),
+  http.post(`${BASE}/auth/firebase`, () => HttpResponse.json(tokens)),
+  http.post(`${BASE}/auth/password/reset`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/auth/refresh`, () => HttpResponse.json(tokens)),
   http.post(`${BASE}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/auth/logout-all`, () => new HttpResponse(null, { status: 204 })),
 
   http.get(`${BASE}/users/me`, () => HttpResponse.json(me)),
   http.patch(`${BASE}/users/me`, async ({ request }) => {
-    const { city_id } = (await request.json()) as { city_id: number }
-    const city = cities.find((item) => item.id === city_id) ?? null
+    const body = (await request.json()) as { city_id?: number; username?: string }
+    // Тот же PATCH ставит и имя (один раз), и город профиля
+    if (body.username) return HttpResponse.json({ ...me, username: body.username })
+    const city = cities.find((item) => item.id === body.city_id) ?? null
     return HttpResponse.json({ ...me, city, city_changed_at: '2026-02-01T12:00:00Z' })
   }),
   http.get(`${BASE}/cities`, () => HttpResponse.json(cities)),

@@ -19,7 +19,28 @@
 }
 
 .footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   margin-top: var(--space-5);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+/* Вопрос выглядит ссылкой, но это действие на этом же экране, а не переход */
+.linkButton {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.note {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
 }

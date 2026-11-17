@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 import { resetSessionForTests } from '../features/session'
 import '../shared/i18n'
@@ -33,6 +33,16 @@ function installMemoryStorage(): void {
 }
 
 if (typeof globalThis.localStorage?.setItem !== 'function') installMemoryStorage()
+
+/**
+ * Окно Firebase в jsdom не открыть, а seam у него ровно один — `signInWithGoogle`.
+ * Мок объявлен здесь, потому что setup грузит sessionStore раньше тестов: объявленный
+ * в тесте мок до этой связи уже не доходит. `enableGoogle()` в тестах подставляет env.
+ */
+vi.mock('../shared/firebase', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../shared/firebase')>()
+  return { ...actual, signInWithGoogle: vi.fn() }
+})
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 beforeEach(() => resetSessionForTests())

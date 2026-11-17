@@ -40,6 +40,18 @@ export function RequireAuth() {
 }
 
 /**
+ * Имя есть у всех, кто зарегистрировался по паролю; пришедший через Google выбирает его
+ * на шаге `/choose-username`. Без имени его не найти и ему не адресовать письмо,
+ * поэтому шаг стоит раньше города и продукта.
+ */
+export function UsernameRequired() {
+  const { user } = useSession()
+
+  if (user?.username == null) return <Navigate to="/choose-username" replace />
+  return <Outlet />
+}
+
+/**
  * Экраны продукта требуют выбранного города: без него письмо не отправить.
  * Пользователя без города уводит на `/city`; сам `/city` живёт вне этого guard'а.
  */

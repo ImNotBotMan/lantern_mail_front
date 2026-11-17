@@ -16,9 +16,10 @@ tags: [frontend, architecture]
 
 ## Стек
 
-React · TypeScript · Vite · React Router · TanStack Query · i18next · CSS-переменные и
-CSS-модули · Vitest + Testing Library + MSW для компонентных тестов · Playwright против
-живого бэкенда для сценариев сессии. Сборка — статический бандл, без SSR.
+React · TypeScript · Vite · React Router · TanStack Query · i18next · Firebase JS SDK
+(только окно входа через Google) · CSS-переменные и CSS-модули · Vitest + Testing Library +
+MSW для компонентных тестов · Playwright против живого бэкенда для сценариев сессии.
+Сборка — статический бандл, без SSR.
 
 ## Топология и границы
 
@@ -35,13 +36,13 @@ src/
   pages/     экраны по адресам: вход, выбор города, входящие, отправленные, письмо, друзья
   features/  доменные хуки и компоненты: letters, friends, city, session
   api/       client, endpoints/*, types (формы контракта)
-  shared/    ui-кит, i18n-словари, утилиты
+  shared/    ui-кит, i18n-словари, утилиты, firebase (окно Google)
 ```
 
 - **`module-front-api-client`** — единственный транспорт: базовый URL, заголовки, разбор
   ошибок, повтор после refresh. Знает формы контракта, не знает экранов.
-- **`module-front-session`** — пара токенов, вход/регистрация/выход, тихий refresh при
-  загрузке, guard защищённых экранов.
+- **`module-front-session`** — пара токенов, вход по паролю и через Google, регистрация,
+  подтверждение почты, сброс пароля, тихий refresh при загрузке, guard'ы экранов.
 - **`module-front-letters`** — экраны писем и действия жизненного цикла.
 - **`module-front-city`** — справочник городов, выбор и смена города, путь письма.
 - **`module-front-friends`** — поиск, заявки, список друзей, unfriend.
@@ -59,8 +60,8 @@ src/
 1. **Один транспорт.** `fetch` встречается только в `src/api/client.ts`. Экраны и хуки
    обращаются к эндпоинтам через модуль API, а не к сети напрямую.
 2. **Один refresh на все запросы.** Параллельные 401 ждут единственный вызов `/auth/refresh`
-   и повторяются один раз. Запросы авторизации (`/auth/login`, `/auth/register`,
-   `/auth/refresh`) refresh не запускают.
+   и повторяются один раз. Запросы авторизации (`/auth/login`, `/auth/register`, `/auth/firebase`,
+   `/auth/password/reset`, `/auth/refresh`, `/auth/logout`) refresh не запускают.
 3. **Разлогин — только по отказу сервера.** Сессия закрывается, когда `/auth/refresh` вернул
    401 `invalid_refresh_token`. Обрыв сети, 5xx и таймаут — не повод разлогинивать: токены
    остаются, экран получает ошибку.
@@ -71,7 +72,7 @@ src/
    по `module-backend-contract`; экраны не разбирают JSON вручную и не объявляют свои формы.
 6. **Ни одной строки в разметке.** Все тексты — из словарей `module-front-i18n-ui`.
 7. **URL — состояние экрана.** Списки и письма адресуемы: `/inbox`, `/sent`, `/letters/:id`,
-   `/friends`, `/account`, `/login`, `/register`.
+   `/friends`, `/account`, `/login`, `/register`, шаги входа — `/choose-username`, `/city`.
 
 ## Решения
 

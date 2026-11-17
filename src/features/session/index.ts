@@ -1,4 +1,7 @@
-export { CityRequired, GuestOnly, RequireAuth } from './guard'
+export { GoogleSignInButton } from './GoogleSignInButton'
+export { CityRequired, GuestOnly, RequireAuth, UsernameRequired } from './guard'
 export { pathAfterAuth } from './navigation'
 export { resetSessionForTests } from './sessionStore'
 export { useSession } from './useSession'
+export { VerifyEmailNotice } from './VerifyEmailNotice'
+export type { ResendResult } from './VerifyEmailNotice'

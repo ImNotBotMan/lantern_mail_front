@@ -71,6 +71,12 @@ export interface RegisterRequest {
   username: string
 }
 
+/** Ответ на регистрацию: аккаунт создан, токенов нет — ждём подтверждения адреса. */
+export interface RegisterResponse {
+  email: string
+  verification_required: true
+}
+
 /** Город справочника: названия на двух языках и координаты для расчёта пути. */
 export interface City {
   id: number

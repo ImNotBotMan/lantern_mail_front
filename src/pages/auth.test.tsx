@@ -1,15 +1,39 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cityName } from '../features/city'
 import i18n from '../shared/i18n'
-import { me, meWithoutCity, moscow, petersburg, tokens } from '../test/msw/handlers'
+import { GoogleSignInError, signInWithGoogle } from '../shared/firebase'
+import {
+  me,
+  meWithoutCity,
+  meWithoutUsername,
+  moscow,
+  petersburg,
+  tokens,
+} from '../test/msw/handlers'
 import { server } from '../test/msw/server'
 import { renderAt } from '../test/render'
 import { signInForTest, signOutForTest } from '../test/session'
 import { t } from '../test/i18n'
+
+/** Конфиг Firebase — переменные окружения: без них кнопка Google не рендерится вовсе. */
+function enableGoogle() {
+  vi.stubEnv('VITE_FIREBASE_API_KEY', 'test-key')
+  vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'test.firebaseapp.com')
+  vi.stubEnv('VITE_FIREBASE_APP_ID', 'test-app')
+}
+
+beforeEach(() => {
+  enableGoogle()
+  vi.mocked(signInWithGoogle).mockReset()
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 async function submitLogin(email: string, password: string) {
   await userEvent.type(await screen.findByLabelText(t('login.email')), email)
@@ -97,7 +121,10 @@ describe('регистрация', () => {
     server.use(
       http.post('*/api/auth/register', () => {
         calls += 1
-        return HttpResponse.json(tokens, { status: 201 })
+        return HttpResponse.json(
+          { email: 'new@example.com', verification_required: true },
+          { status: 202 },
+        )
       }),
     )
     renderAt('/register')
@@ -108,14 +135,172 @@ describe('регистрация', () => {
     expect(calls).toBe(0)
   })
 
-  it('успешная регистрация ведёт к выбору города', async () => {
+  it('успешная регистрация просит подтвердить почту, а не пускает внутрь', async () => {
     signOutForTest()
-    server.use(http.get('*/api/users/me', () => HttpResponse.json(meWithoutCity)))
     renderAt('/register')
 
     await submitRegister('new@example.com', 'new_user', 'password123')
 
+    expect(await screen.findByRole('heading', { name: t('verify.title') })).toBeInTheDocument()
+    expect(
+      screen.getByText(i18n.t('verify.text', { ns: 'auth', email: 'new@example.com' })),
+    ).toBeInTheDocument()
+    // Без подтверждённого адреса сессии нет: экран входа, а не продукт
+    expect(screen.queryByRole('heading', { name: t('login.title') })).toBeNull()
+  })
+
+  it('повторная отправка после подтверждения сразу входит', async () => {
+    signOutForTest()
+    server.use(http.get('*/api/users/me', () => HttpResponse.json(meWithoutCity)))
+    renderAt('/register')
+    await submitRegister('new@example.com', 'new_user', 'password123')
+
+    // Адрес подтвердили: повтор входа (он же повтор письма) проходит и ведёт к городу
+    await userEvent.click(await screen.findByRole('button', { name: t('verify.resend') }))
+
     expect(await screen.findByRole('heading', { name: t('title', 'city') })).toBeInTheDocument()
+  })
+})
+
+describe('подтверждение почты при входе', () => {
+  it('неподтверждённый адрес ведёт на экран письма, а не к ошибке', async () => {
+    signOutForTest()
+    server.use(
+      http.post('*/api/auth/login', () =>
+        HttpResponse.json(
+          { error: 'email_not_verified', message: 'Confirm your email' },
+          { status: 403 },
+        ),
+      ),
+    )
+    renderAt('/login')
+
+    await submitLogin('me@example.com', 'password123')
+
+    expect(await screen.findByRole('heading', { name: t('verify.title') })).toBeInTheDocument()
+    expect(
+      screen.getByText(i18n.t('verify.text', { ns: 'auth', email: 'me@example.com' })),
+    ).toBeInTheDocument()
+  })
+
+  it('после подтверждения повтор входа пускает в продукт', async () => {
+    signOutForTest()
+    renderAt('/login')
+    server.use(
+      http.post('*/api/auth/login', () =>
+        HttpResponse.json(
+          { error: 'email_not_verified', message: 'Confirm your email' },
+          { status: 403 },
+        ),
+      ),
+    )
+    await submitLogin('me@example.com', 'password123')
+    await screen.findByRole('heading', { name: t('verify.title') })
+
+    // Адрес подтверждён: тот же повтор входа теперь выдаёт пару токенов
+    server.use(http.post('*/api/auth/login', () => HttpResponse.json(tokens)))
+    await userEvent.click(screen.getByRole('button', { name: t('verify.resend') }))
+
+    expect(
+      await screen.findByRole('heading', { name: t('inbox.title', 'letters') }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe('вход через Google', () => {
+  async function clickGoogle() {
+    await userEvent.click(await screen.findByRole('button', { name: t('login.google') }))
+  }
+
+  it('меняет ID-токен Firebase на нашу сессию', async () => {
+    signOutForTest()
+    vi.mocked(signInWithGoogle).mockResolvedValue('firebase-id-token')
+    let sentToken = ''
+    server.use(
+      http.post('*/api/auth/firebase', async ({ request }) => {
+        sentToken = ((await request.json()) as { id_token: string }).id_token
+        return HttpResponse.json(tokens)
+      }),
+    )
+    renderAt('/login')
+
+    await clickGoogle()
+
+    expect(
+      await screen.findByRole('heading', { name: t('inbox.title', 'letters') }),
+    ).toBeInTheDocument()
+    expect(sentToken).toBe('firebase-id-token')
+  })
+
+  it('новому пользователю сначала предлагает выбрать имя', async () => {
+    signOutForTest()
+    vi.mocked(signInWithGoogle).mockResolvedValue('firebase-id-token')
+    server.use(http.get('*/api/users/me', () => HttpResponse.json(meWithoutUsername)))
+    renderAt('/login')
+
+    await clickGoogle()
+
+    expect(
+      await screen.findByRole('heading', { name: t('chooseUsername.title') }),
+    ).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText(t('register.username')), 'lantern')
+    await userEvent.click(screen.getByRole('button', { name: t('chooseUsername.submit') }))
+
+    // Имя сохранено — дальше обычный путь: город уже есть, значит входящие
+    expect(
+      await screen.findByRole('heading', { name: t('inbox.title', 'letters') }),
+    ).toBeInTheDocument()
+  })
+
+  it('закрытое окно Google ничего не показывает', async () => {
+    signOutForTest()
+    vi.mocked(signInWithGoogle).mockRejectedValue(new GoogleSignInError('cancelled'))
+    renderAt('/login')
+
+    await clickGoogle()
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('heading', { name: t('login.title') })).toBeInTheDocument()
+  })
+
+  it('занятый адрес объясняется подсказкой сервера', async () => {
+    signOutForTest()
+    vi.mocked(signInWithGoogle).mockResolvedValue('firebase-id-token')
+    server.use(
+      http.post('*/api/auth/firebase', () =>
+        HttpResponse.json(
+          { error: 'email_registered', message: 'Account exists' },
+          { status: 409 },
+        ),
+      ),
+    )
+    renderAt('/login')
+
+    await clickGoogle()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(t('email_registered', 'errors'))
+  })
+})
+
+describe('сброс пароля', () => {
+  it('просит только email и не раскрывает, есть ли аккаунт', async () => {
+    signOutForTest()
+    let sent = ''
+    server.use(
+      http.post('*/api/auth/password/reset', async ({ request }) => {
+        sent = ((await request.json()) as { email: string }).email
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderAt('/login')
+
+    await userEvent.click(await screen.findByRole('button', { name: t('login.forgot') }))
+    await userEvent.type(screen.getByLabelText(t('login.email')), 'ghost@example.com')
+    await userEvent.click(screen.getByRole('button', { name: t('reset.submit') }))
+
+    expect(await screen.findByText(t('reset.sent'))).toBeInTheDocument()
+    expect(sent).toBe('ghost@example.com')
   })
 })
 

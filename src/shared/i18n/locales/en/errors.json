@@ -23,5 +23,10 @@
   "validation_error": "Please check the entered data",
   "network_error": "No connection to the server",
   "server_error": "The server is not responding, try later",
-  "unknown": "Something went wrong"
+  "unknown": "Something went wrong",
+  "email_not_verified": "Confirm your address with the link from the letter first",
+  "email_registered": "This email already has an account — sign in with the password and confirm it",
+  "username_already_set": "The username is already set and cannot be changed",
+  "identity_unavailable": "The sign-in service is unavailable, try again later",
+  "invalid_token": "The provider sign-in was not accepted, try again"
 }

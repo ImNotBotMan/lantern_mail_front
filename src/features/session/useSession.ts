@@ -6,6 +6,8 @@ import {
   logout,
   logoutAll,
   register,
+  requestPasswordReset,
+  resendVerification,
   subscribe,
   updateUser,
 } from './sessionStore'
@@ -16,5 +18,14 @@ import {
  */
 export function useSession() {
   const snapshot = useSyncExternalStore(subscribe, getSessionSnapshot)
-  return { ...snapshot, login, register, logout, logoutAll, updateUser }
+  return {
+    ...snapshot,
+    login,
+    register,
+    logout,
+    logoutAll,
+    updateUser,
+    resendVerification,
+    requestPasswordReset,
+  }
 }

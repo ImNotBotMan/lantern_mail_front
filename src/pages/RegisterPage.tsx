@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/errors'
-import { useSession } from '../features/session'
+import { GoogleSignInButton, useSession, VerifyEmailNotice } from '../features/session'
 import { errorMessage } from '../shared/i18n/apiError'
 import { Button, Field } from '../shared/ui'
 import styles from './auth.module.css'
@@ -19,7 +19,7 @@ const PASSWORD_MAX = 128
 
 export function RegisterPage() {
   const { t } = useTranslation('auth')
-  const { register } = useSession()
+  const { register, resendVerification } = useSession()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -29,9 +29,22 @@ export function RegisterPage() {
   const [serverError, setServerError] = useState<ApiError | null>(null)
   const [pending, setPending] = useState(false)
 
+  /** Регистрация не открывает сессию: адрес нужно подтвердить письмом. */
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
+
   /** Занятые email и имя — ошибки про конкретное поле, остальные коды — про форму целиком. */
   const emailTaken = serverError?.code === 'email_taken'
   const usernameTaken = serverError?.code === 'username_taken'
+
+  if (verificationEmail) {
+    return (
+      <VerifyEmailNotice
+        email={verificationEmail}
+        onResend={() => resendVerification(verificationEmail, password)}
+        onVerified={() => navigate('/city', { replace: true })}
+      />
+    )
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,8 +65,8 @@ export function RegisterPage() {
     setPending(true)
     try {
       await register({ email: trimmedEmail, username, password })
-      // Новый пользователь без города: сначала выбор города, потом входящие
-      navigate('/city', { replace: true })
+      // Аккаунт создан, токенов нет: показываем «проверьте почту» с адресом
+      setVerificationEmail(trimmedEmail)
     } catch (error) {
       setServerError(error instanceof ApiError ? error : null)
       setValidation({})
@@ -118,6 +131,10 @@ export function RegisterPage() {
       <div className={styles.footer}>
         <Link to="/login">{t('register.toLogin')}</Link>
       </div>
+      <GoogleSignInButton
+        onSignedIn={() => navigate('/inbox', { replace: true })}
+        onError={(error) => setServerError(error instanceof ApiError ? error : null)}
+      />
     </section>
   )
 }

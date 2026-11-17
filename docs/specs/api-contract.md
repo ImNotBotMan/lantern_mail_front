@@ -79,13 +79,15 @@ tags: [contract, api]
 
 | Метод и путь | Тело запроса | Успех |
 |---|---|---|
-| `POST /auth/register` | JSON `{ email, password, username }` — `username` 3–32, `[a-z0-9_]`, пароль 8–128 | 201 `TokenResponse` |
-| `POST /auth/login` | **form-encoded** (`application/x-www-form-urlencoded`): `username` = email, `password` | 200 `TokenResponse` |
+| `POST /auth/register` | JSON `{ email, password, username }` — `username` 3–32, `[a-z0-9_]`, пароль 8–128 | **202** `{ email, verification_required: true }` — токенов нет, пока адрес не подтверждён |
+| `POST /auth/login` | **form-encoded** (`application/x-www-form-urlencoded`): `username` = email, `password` | 200 `TokenResponse`; 403 `email_not_verified`, пока адрес не подтверждён |
+| `POST /auth/firebase` | JSON `{ id_token }` — ID-токен от Firebase SDK после входа через Google | 200 `TokenResponse` |
+| `POST /auth/password/reset` | JSON `{ email }` | 204 всегда: существование адреса не раскрывается |
 | `POST /auth/refresh` | JSON `{ refresh_token }` | 200 `TokenResponse` (новая пара) |
 | `POST /auth/logout` | JSON `{ refresh_token }` | 204 |
 | `POST /auth/logout-all` | — (нужен access-токен) | 204 |
 | `GET /users/me` | — | 200 `UserResponse` |
-| `PATCH /users/me` | JSON `{ city_id }` (только город; лишнее поле — 422) | 200 `UserResponse` |
+| `PATCH /users/me` | JSON `{ city_id?, username? }` — хотя бы одно поле, лишнее — 422; `username` ставится один раз, пока пуст | 200 `UserResponse` |
 | `GET /cities` | — | 200 `City[]` — справочник по алфавиту |
 
 Логин — единственный эндпоинт с form-encoded телом (так его отдаёт `OAuth2PasswordRequestForm`);
@@ -181,14 +183,19 @@ UserSearchResult        { username, relationship, request_id | null }
 
 | HTTP | Коды |
 |---|---|
-| 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token` |
-| 403 | `forbidden` |
+| 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token`, `invalid_token` |
+| 403 | `forbidden`, `email_not_verified` |
 | 404 | `not_found`, `user_not_found`, `friend_request_not_found` |
-| 409 | `email_taken`, `username_taken`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
+| 409 | `email_taken`, `email_registered`, `username_taken`, `username_already_set`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
 | 422 | `recipient_not_found`, `friend_request_to_self`, `city_not_found`, `validation_error` (с `details`) |
+| 502 | `identity_unavailable` — недоступен провайдер входа (Firebase), а не отказ пользователю |
 
 `invalid_refresh_token` на `/auth/refresh` означает, что сессия закрыта (истекла или
 украдена) — это единственный ответ, по которому клиент разлогинивается.
+
+`email_not_verified` — не ошибка формы: клиент показывает экран «проверьте почту», а повторная
+отправка письма — это повторный `POST /auth/login` (сервер отправляет письмо на каждой попытке
+входа без подтверждения). Отдельного эндпоинта повторной отправки нет.
 
 ## Правила, которые клиент получает от сервера, а не выводит сам
 

@@ -86,18 +86,25 @@ tags: [contract, api]
 | `POST /auth/logout-all` | — (нужен access-токен) | 204 |
 | `GET /users/me` | — | 200 `UserResponse` |
 | `PATCH /users/me` | JSON `{ city_id }` (только город; лишнее поле — 422) | 200 `UserResponse` |
-| `GET /cities` | — | 200 `City[]` — справочник по алфавиту |
+| `GET /cities` | — ? `country=XX` | 200 `City[]` — с фильтром города одной страны, без него весь справочник по алфавиту |
+| `GET /countries` | — | 200 `Country[]` — страны, в которых есть города справочника |
 
 Логин — единственный эндпоинт с form-encoded телом (так его отдаёт `OAuth2PasswordRequestForm`);
 остальные — JSON.
 
 ```
 UserResponse  { id, username | null, created_at, city: City | null, city_changed_at | null }
-City          { id, name_ru, name_en, country_ru, country_en, latitude, longitude }
+City          { id, name_ru, name_en, country_ru, country_en, country_code, latitude, longitude }
+Country       { country_code, name_ru, name_en, city_count }
 ```
 
 `city_changed_at` — когда город выбран или сменён в последний раз; от него клиент
 считает, с какой даты смена снова доступна. `null` в `city` — город ещё не выбран.
+
+`country_code` — код страны ISO 3166-1 alpha-2; им же фильтруется `GET /cities` и
+идентифицируется страна в `GET /countries` — названия стран клиенту нужны только для показа.
+Выбор города двухшаговый: клиент спрашивает страны, затем города выбранной страны;
+весь справочник целиком клиент не запрашивает — городов в нём сотни.
 
 ### Письма
 

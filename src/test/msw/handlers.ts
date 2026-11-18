@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 
 import type {
   City,
+  Country,
   Friend,
   IncomingFriendRequest,
   IncomingLetter,
@@ -28,6 +29,7 @@ export const moscow: City = {
   name_en: 'Moscow',
   country_ru: 'Россия',
   country_en: 'Russia',
+  country_code: 'RU',
   latitude: 55.7558,
   longitude: 37.6173,
 }
@@ -38,11 +40,16 @@ export const petersburg: City = {
   name_en: 'Saint Petersburg',
   country_ru: 'Россия',
   country_en: 'Russia',
+  country_code: 'RU',
   latitude: 59.9343,
   longitude: 30.3351,
 }
 
 export const cities: City[] = [moscow, petersburg]
+
+export const countries: Country[] = [
+  { country_code: 'RU', name_ru: 'Россия', name_en: 'Russia', city_count: cities.length },
+]
 
 export const me: UserResponse = {
   id: 1,
@@ -174,7 +181,13 @@ export const handlers = [
     const city = cities.find((item) => item.id === city_id) ?? null
     return HttpResponse.json({ ...me, city, city_changed_at: '2026-02-01T12:00:00Z' })
   }),
-  http.get(`${BASE}/cities`, () => HttpResponse.json(cities)),
+  http.get(`${BASE}/cities`, ({ request }) => {
+    const country = new URL(request.url).searchParams.get('country')
+    return HttpResponse.json(
+      country ? cities.filter((city) => city.country_code === country) : cities,
+    )
+  }),
+  http.get(`${BASE}/countries`, () => HttpResponse.json(countries)),
   http.get(`${BASE}/users/search`, ({ request }) => {
     const query = new URL(request.url).searchParams.get('q') ?? ''
     if (query.length < 3) {

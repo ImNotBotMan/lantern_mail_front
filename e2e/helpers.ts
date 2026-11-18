@@ -45,7 +45,9 @@ export async function createUser(
   }
   if (cityId === null) return user
 
-  const token = ((await response.json()) as { access_token: string }).access_token
+  // Регистрация токенов не выдаёт — сначала подтверждение адреса. Локально провайдер
+  // подтверждает его сам, поэтому вход отдельным запросом работает без письма.
+  const token = await apiAccessToken(request, user)
   const withCity = await request.patch(`${API_BASE_URL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
     data: { city_id: cityId },

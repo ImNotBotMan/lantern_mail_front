@@ -85,6 +85,9 @@ export function LoginPage() {
           }
           onChange={(event) => setPassword(event.target.value)}
         />
+        <div className={styles.support}>
+          <Link to="/forgot-password">{t('login.forgot')}</Link>
+        </div>
         <Button className={styles.submit} type="submit" disabled={pending}>
           {t('login.submit')}
         </Button>

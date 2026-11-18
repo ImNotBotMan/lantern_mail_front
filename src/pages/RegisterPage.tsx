@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { ApiError } from '../api/errors'
 import { useSession } from '../features/session'
@@ -20,7 +20,6 @@ const PASSWORD_MAX = 128
 export function RegisterPage() {
   const { t } = useTranslation('auth')
   const { register } = useSession()
-  const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -28,6 +27,8 @@ export function RegisterPage() {
   const [validation, setValidation] = useState<Validation>({})
   const [serverError, setServerError] = useState<ApiError | null>(null)
   const [pending, setPending] = useState(false)
+  /** Адрес, на который ушло письмо подтверждения; null — показываем форму. */
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
 
   /** Занятые email и имя — ошибки про конкретное поле, остальные коды — про форму целиком. */
   const emailTaken = serverError?.code === 'email_taken'
@@ -51,15 +52,27 @@ export function RegisterPage() {
 
     setPending(true)
     try {
-      await register({ email: trimmedEmail, username, password })
-      // Новый пользователь без города: сначала выбор города, потом входящие
-      navigate('/city', { replace: true })
+      // Сессию регистрация не открывает: адрес сначала подтверждают письмом
+      const result = await register({ email: trimmedEmail, username, password })
+      setRegisteredEmail(result.email)
     } catch (error) {
       setServerError(error instanceof ApiError ? error : null)
       setValidation({})
     } finally {
       setPending(false)
     }
+  }
+
+  if (registeredEmail !== null) {
+    return (
+      <section>
+        <h1>{t('register.sentTitle')}</h1>
+        <p className={styles.intro}>{t('register.sentBody', { email: registeredEmail })}</p>
+        <div className={styles.footer}>
+          <Link to="/login">{t('register.toLogin')}</Link>
+        </div>
+      </section>
+    )
   }
 
   return (

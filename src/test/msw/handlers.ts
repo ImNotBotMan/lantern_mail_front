@@ -170,7 +170,11 @@ export function sessionRejected() {
 /** Хендлеры по формам контракта: тесты клиента не зависят от реализации бэкенда. */
 export const handlers = [
   http.post(`${BASE}/auth/login`, () => HttpResponse.json(tokens)),
-  http.post(`${BASE}/auth/register`, () => HttpResponse.json(tokens, { status: 201 })),
+  http.post(`${BASE}/auth/register`, async ({ request }) => {
+    const { email } = (await request.json()) as { email: string }
+    return HttpResponse.json({ email, verification_required: true }, { status: 202 })
+  }),
+  http.post(`${BASE}/auth/password/reset`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/auth/refresh`, () => HttpResponse.json(tokens)),
   http.post(`${BASE}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/auth/logout-all`, () => new HttpResponse(null, { status: 204 })),

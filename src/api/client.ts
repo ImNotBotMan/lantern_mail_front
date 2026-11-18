@@ -26,12 +26,52 @@ export interface RequestOptions {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
+/**
+ * Realtime живёт на том же адресе, что и HTTP: в разработке `/api/ws` идёт через Vite-прокси
+ * на `/ws` бэкенда. Отдельная переменная нужна, только если сокеты обслуживает другой хост.
+ */
+const SOCKET_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? BASE_URL
+
+/** Абсолютный ws(s)-адрес: относительная база достраивается от адреса страницы. */
+export function socketUrl(
+  path: string,
+  params: Record<string, string>,
+  base: string = SOCKET_BASE_URL,
+  pageUrl: string = globalThis.location.href,
+): string {
+  const url = new URL(`${base}${path}`, pageUrl)
+  if (url.protocol === 'https:') url.protocol = 'wss:'
+  if (url.protocol === 'http:') url.protocol = 'ws:'
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
+  return url.toString()
+}
+
 export class ApiClient {
   private session: SessionBridge | null = null
   private refreshing: Promise<void> | null = null
 
   setSession(session: SessionBridge): void {
     this.session = session
+  }
+
+  /** Access-токен для транспорта вне `fetch` (realtime-сокет). */
+  accessToken(): string | null {
+    return this.session?.getAccessToken() ?? null
+  }
+
+  /**
+   * Обновление пары по тем же правилам, что и при 401: один refresh на всех, разлогин —
+   * только по отказу сервера (архитектура, инвариант 3), сеть и 5xx пару не трогают.
+   */
+  async refreshSession(): Promise<void> {
+    const session = this.session
+    if (!session) throw new ApiError(401, 'not_authenticated', 'No session')
+    try {
+      await this.refreshOnce()
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.isSessionRejected) session.onSessionRejected()
+      throw cause instanceof ApiError ? cause : networkError(cause)
+    }
   }
 
   async request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
@@ -41,16 +81,7 @@ export class ApiClient {
     const response = await this.send(method, path, options, tokenUsed)
 
     if (response.status === 401 && !options.isAuthRequest && session) {
-      if (session.getAccessToken() === tokenUsed) {
-        try {
-          await this.refreshOnce()
-        } catch (cause) {
-          // Разлогин — только по отказу сервера (архитектура, инвариант 3):
-          // обрыв сети и 5xx пару токенов оставляют на месте.
-          if (cause instanceof ApiError && cause.isSessionRejected) session.onSessionRejected()
-          throw cause instanceof ApiError ? cause : networkError(cause)
-        }
-      }
+      if (session.getAccessToken() === tokenUsed) await this.refreshSession()
 
       const retried = await this.send(method, path, options, session.getAccessToken())
       // Повторный 401 после успешного refresh — ошибка, а не новый цикл.

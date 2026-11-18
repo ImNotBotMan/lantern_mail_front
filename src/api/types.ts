@@ -58,6 +58,68 @@ export interface IncomingLetter {
 export type AnyLetter = LetterResponse | IncomingLetter | IncomingLetterPreview
 export type IncomingLetterView = IncomingLetter | IncomingLetterPreview
 
+/** Диалог без истории: кто собеседник и можно ли туда писать. */
+export interface ConversationSummary {
+  id: string
+  /** Чат «Себе»: собеседника нет, `peer_username` — null. */
+  is_self: boolean
+  peer_username: string | null
+  /** false — чат заморожен после unfriend: история читается, писать нельзя. */
+  can_write: boolean
+}
+
+/**
+ * Последнее письмо диалога. У чужого летящего письма (`in_transit`) текста нет — `body` пустой,
+ * и времени доставки тоже нет.
+ */
+/**
+ * Превью последнего видимого мне письма. `text` — своё письмо или доставленное чужое (тело есть),
+ * `in_transit` — чужое ещё летит: ни текста, ни времени доставки контракт не отдаёт.
+ */
+export type ConversationPreview =
+  | { letter_id: string; kind: 'text'; body: string }
+  | { letter_id: string; kind: 'in_transit'; body: null }
+
+/** Карточка списка чатов. Порядок списка задаёт сервер: новые вперёд, «Себе» — в конце. */
+export interface ConversationCard extends ConversationSummary {
+  last_event_at: string
+  preview: ConversationPreview
+}
+
+export interface ConversationList {
+  items: ConversationCard[]
+}
+
+/** Страница ленты диалога: письма в тех же формах, что `/letters`, новые вперёд. */
+export interface ConversationFeed {
+  conversation: ConversationSummary
+  items: AnyLetter[]
+  /** Непрозрачный курсор для `before`; null — более ранних писем нет. */
+  next_cursor: string | null
+}
+
+export interface ConversationFeedQuery {
+  /** 1–200. */
+  limit?: number
+  before?: string | null
+}
+
+export type LetterEventType = 'letter.sent' | 'letter.delivered' | 'letter.read'
+
+/**
+ * Событие realtime-шины `/ws`. Шина не источник правды: событие лишь говорит, что пора
+ * перезапросить данные, и может прийти повторно.
+ */
+export interface LetterEvent {
+  type: LetterEventType
+  letter_id: string
+  /** Обязателен у всех трёх событий: по нему обновляется карточка и лента одного чата. */
+  conversation_id: string
+  sender_id: number
+  recipient_id: number
+  at: string
+}
+
 export interface TokenResponse {
   access_token: string
   refresh_token: string

@@ -113,6 +113,35 @@ export async function befriend(
   }
 }
 
+/** Письмо через API — создать, запечатать, отправить: так у пары появляется диалог. */
+export async function sendLetter(
+  request: APIRequestContext,
+  sender: E2EUser,
+  recipient: E2EUser,
+  body: string,
+): Promise<string> {
+  const headers = { Authorization: `Bearer ${await apiAccessToken(request, sender)}` }
+  const created = await request.post(`${API_BASE_URL}/letters`, {
+    headers,
+    data: { recipient_username: recipient.username, body },
+  })
+  if (!created.ok()) {
+    throw new Error(`Не удалось создать письмо: ${created.status()} ${await created.text()}`)
+  }
+  const { id } = (await created.json()) as { id: string }
+
+  for (const step of ['seal', 'send']) {
+    const response = await request.post(`${API_BASE_URL}/letters/${id}/${step}`, {
+      headers,
+      data: {},
+    })
+    if (!response.ok()) {
+      throw new Error(`Не удалось выполнить ${step}: ${response.status()} ${await response.text()}`)
+    }
+  }
+  return id
+}
+
 export async function signIn(page: Page, user: E2EUser): Promise<void> {
   await page.goto('/login')
   await page.getByLabel('Email').fill(user.email)

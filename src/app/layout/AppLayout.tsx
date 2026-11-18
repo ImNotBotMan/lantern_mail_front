@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { chatsPaths, useChatEvents } from '../../features/chats'
 import { lettersPaths } from '../../features/letters/paths'
 import { LinkButton } from '../../shared/ui'
 import { LanguageSwitch } from './LanguageSwitch'
@@ -9,8 +10,13 @@ import styles from './AppLayout.module.css'
 const navClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
 
+/**
+ * Layout продукта живёт ровно тогда, когда сессия открыта и город выбран (его держат guard'ы),
+ * поэтому realtime-шина подключается здесь один раз и закрывается вместе с выходом.
+ */
 export function AppLayout() {
   const { t } = useTranslation()
+  useChatEvents()
 
   return (
     <div className={styles.layout}>
@@ -24,6 +30,9 @@ export function AppLayout() {
           </NavLink>
           <NavLink to="/sent" className={navClass}>
             {t('nav.sent')}
+          </NavLink>
+          <NavLink to={chatsPaths.list} className={navClass}>
+            {t('nav.chats')}
           </NavLink>
           <NavLink to="/friends" className={navClass}>
             {t('nav.friends')}

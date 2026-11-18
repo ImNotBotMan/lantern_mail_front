@@ -5,6 +5,8 @@ import { AppLayout } from './layout/AppLayout'
 import { AuthLayout } from './layout/AuthLayout'
 import { CityRequired, GuestOnly, RequireAuth } from '../features/session'
 import { AccountPage } from '../pages/AccountPage'
+import { ChatPage } from '../pages/ChatPage'
+import { ChatsPage } from '../pages/ChatsPage'
 import { CityPage } from '../pages/CityPage'
 import { FriendsPage } from '../pages/FriendsPage'
 import { InboxPage } from '../pages/InboxPage'
@@ -43,6 +45,8 @@ export const routes: RouteObject[] = [
               { index: true, element: <Navigate to="/inbox" replace /> },
               { path: 'inbox', element: <InboxPage /> },
               { path: 'sent', element: <SentPage /> },
+              { path: 'chats', element: <ChatsPage /> },
+              { path: 'chats/:id', element: <ChatPage /> },
               { path: 'friends', element: <FriendsPage /> },
               { path: 'account', element: <AccountPage /> },
               { path: 'letters/new', element: <LetterEditorPage /> },

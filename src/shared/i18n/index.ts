@@ -2,12 +2,14 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 import enAuth from './locales/en/auth.json'
+import enChats from './locales/en/chats.json'
 import enCity from './locales/en/city.json'
 import enCommon from './locales/en/common.json'
 import enErrors from './locales/en/errors.json'
 import enFriends from './locales/en/friends.json'
 import enLetters from './locales/en/letters.json'
 import ruAuth from './locales/ru/auth.json'
+import ruChats from './locales/ru/chats.json'
 import ruCity from './locales/ru/city.json'
 import ruCommon from './locales/ru/common.json'
 import ruErrors from './locales/ru/errors.json'
@@ -20,13 +22,22 @@ export type Language = (typeof SUPPORTED_LANGUAGES)[number]
 
 const STORAGE_KEY = 'lantern.language'
 
-export const NAMESPACES = ['common', 'auth', 'letters', 'friends', 'city', 'errors'] as const
+export const NAMESPACES = [
+  'common',
+  'auth',
+  'letters',
+  'chats',
+  'friends',
+  'city',
+  'errors',
+] as const
 
 export const resources = {
   ru: {
     common: ruCommon,
     auth: ruAuth,
     letters: ruLetters,
+    chats: ruChats,
     friends: ruFriends,
     city: ruCity,
     errors: ruErrors,
@@ -35,6 +46,7 @@ export const resources = {
     common: enCommon,
     auth: enAuth,
     letters: enLetters,
+    chats: enChats,
     friends: enFriends,
     city: enCity,
     errors: enErrors,

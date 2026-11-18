@@ -1,0 +1,25 @@
+{
+  "list": {
+    "title": "Chats",
+    "empty": "No chats yet — a chat appears with your first letter to a friend or to yourself",
+    "inTransit": "Letter on its way",
+    "frozen": "Frozen"
+  },
+  "chat": {
+    "self": "To myself",
+    "unknownPeer": "unknown person",
+    "back": "All chats",
+    "missing": "This chat doesn't exist or isn't available to you",
+    "empty": "No letters yet — write the first one",
+    "earlier": "Show earlier letters",
+    "frozen": "This chat is frozen: you are no longer friends. You can read the history, but can't send new letters.",
+    "refreshFailed": "Couldn't refresh the chat: {{reason}}"
+  },
+  "composer": {
+    "label": "New letter",
+    "placeholder": "Write a letter…",
+    "hint": "The letter will be sealed and sent on its way right away.",
+    "send": "Send",
+    "sending": "Sending…"
+  }
+}

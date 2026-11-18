@@ -1,7 +1,9 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, ws } from 'msw'
 
 import type {
   City,
+  ConversationCard,
+  ConversationFeed,
   Friend,
   IncomingFriendRequest,
   IncomingLetter,
@@ -146,6 +148,51 @@ export const searchResult: UserSearchResult = {
   request_id: null,
 }
 
+/** Диалог с другом: последнее письмо — текстом. */
+export const annaChat: ConversationCard = {
+  id: 'aaaaaaaa-0000-0000-0000-000000000001',
+  is_self: false,
+  peer_username: 'anna',
+  can_write: true,
+  last_event_at: '2026-01-05T12:00:00Z',
+  preview: { letter_id: letter.id, kind: 'text', body: 'Привет' },
+}
+
+/** Замороженный после unfriend диалог, где к нам летит письмо: текста в превью нет. */
+export const borisChat: ConversationCard = {
+  id: 'aaaaaaaa-0000-0000-0000-000000000002',
+  is_self: false,
+  peer_username: 'boris',
+  can_write: false,
+  last_event_at: '2026-01-04T12:00:00Z',
+  preview: { letter_id: envelope.id, kind: 'in_transit', body: null },
+}
+
+/** Чат «Себе»: собеседника нет, сервер ставит его в конец списка. */
+export const selfChat: ConversationCard = {
+  id: 'aaaaaaaa-0000-0000-0000-000000000003',
+  is_self: true,
+  peer_username: null,
+  can_write: true,
+  last_event_at: '2026-01-06T12:00:00Z',
+  preview: { letter_id: letter.id, kind: 'text', body: 'Письмо в будущее' },
+}
+
+export function feedOf(
+  card: ConversationCard,
+  items: ConversationFeed['items'] = [],
+  nextCursor: string | null = null,
+): ConversationFeed {
+  const { id, is_self, peer_username, can_write } = card
+  return { conversation: { id, is_self, peer_username, can_write }, items, next_cursor: nextCursor }
+}
+
+/**
+ * Realtime-шина. Без хендлера MSW счёл бы сокет неучтённым запросом, а layout продукта
+ * подключается к ней на каждом экране. Тест шлёт события через `chatSocket.broadcast`.
+ */
+export const chatSocket = ws.link('*/api/ws')
+
 export function unauthorized() {
   return HttpResponse.json(
     { error: 'not_authenticated', message: 'Not authenticated' },
@@ -212,6 +259,14 @@ export const handlers = [
       { status: 200 },
     ),
   ),
+
+  http.get(`${BASE}/conversations`, () => HttpResponse.json({ items: [annaChat, selfChat] })),
+  http.get(`${BASE}/conversations/:id/letters`, () => HttpResponse.json(feedOf(annaChat))),
+  chatSocket.addEventListener('connection', ({ client }) => {
+    client.addEventListener('message', (event) => {
+      if (event.data === 'ping') client.send(JSON.stringify({ type: 'pong' }))
+    })
+  }),
 
   http.get(`${BASE}/friends`, () => HttpResponse.json([friend])),
   http.delete(`${BASE}/friends/:username`, () => new HttpResponse(null, { status: 204 })),

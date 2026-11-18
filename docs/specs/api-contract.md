@@ -21,7 +21,8 @@ tags: [contract, api]
 ## Boundary
 
 - Источник форм: `docs/friends.md` (друзья и поиск — целевой дизайн), `docs/letter-lifecycle.md`
-  (письма), `docs/specs/module-api.md` и `module-auth` бэкенда (авторизация, ошибки).
+  (письма), `docs/conversations.md` (чаты и realtime-канал), `docs/specs/module-api.md`,
+  `module-events` и `module-auth` бэкенда (авторизация, ошибки).
 - Не описывает: реализацию бэкенда, схему БД, воркер, push.
 - Не описывает: как клиент хранит ответы и что рисует — это `architecture` и модули.
 
@@ -35,6 +36,12 @@ tags: [contract, api]
 не требующие базы, подтверждены живыми запросами: `q` короче 3 символов — 422,
 `friend_request_to_self` и `recipient_not_found` — 422, тело заявки принимает только
 `recipient_username`.
+
+Чаты и realtime-канал выкачены в `main` монорепо (PR #13, #14); формы и подача событий
+сверены с `docs/conversations.md`, схемами `backend/app/schemas/conversations.py` и ответами
+автора бэкенда. Практические следствия: `preview` есть всегда, `preview.body: null` — только
+у летящего; `conversation_id` обязателен у всех трёх событий (README-абзац про `null`
+у `letter.read` из контракта убран); живой сокет не закрывается при истечении токена.
 
 Города требуют ревизии Alembic `c9e4f7a12b58` (`uv run alembic upgrade head`): без неё
 `/cities` и `PATCH /users/me` отвечают 500, а письма — 500 вместо отправки.
@@ -141,6 +148,59 @@ sender_city | null, recipient_city | null }`.
 `postcard_id` / `seal_id` / `stamp_id` — идентификаторы ещё не созданного каталога
 обёрток; сервер их не проверяет, каталога в первом билде нет.
 
+### Чаты
+
+| Метод и путь | Тело запроса | Успех |
+|---|---|---|
+| `GET /conversations` | — | 200 `{ items: ConversationCard[] }` |
+| `GET /conversations/{id}/letters` | — (`?limit` 1–200, по умолчанию 50; `?before` — курсор) | 200 `ConversationFeed` |
+
+```
+ConversationCard   { id, is_self, peer_username | null, can_write, last_event_at,
+                     preview: ConversationPreview }
+ConversationPreview text:        { letter_id, kind: "text", body }
+                    in_transit:  { letter_id, kind: "in_transit", body: null }
+ConversationFeed   { conversation: { id, is_self, peer_username | null, can_write },
+                     items: (LetterResponse | IncomingLetter | IncomingLetterPreview)[],
+                     next_cursor | null }
+```
+
+- Чат — диалог пары участников (письма принадлежат ему по совпадению пары), поэтому список
+  отдаётся целиком, без пагинации. Порядок задаёт сервер: по `last_event_at` новые вперёд,
+  чат «Себе» — в конце. Момент письма в ленте: своё — `sent_at`, чужое — `deliver_at`.
+- `peer_username` у чата «Себе» — `null`; `can_write: false` после удаления из друзей: история
+  читается, писать нельзя.
+- `preview` есть всегда: чат без видимых мне писем в список не попадает. `preview.body`
+  `null` — ровно у `kind: "in_transit"`: у чужого летящего письма ни текста, ни времени
+  доставки контракт не отдаёт (как и в `IncomingLetterPreview`).
+- Лента отдаёт письма в тех же трёх формах, что `/letters` (`поле view`), новые вперёд;
+  `next_cursor` — непрозрачная строка, передаётся обратно в `before`, `null` — страниц больше нет.
+  Не-участник чата получает 404 `not_found`: для него чата не существует.
+- Счётчика непрочитанных в API нет (определение согласовано: доставленное мне письмо без `read_at`).
+
+### Realtime-канал чатов (WebSocket)
+
+`WS /ws?token=<access_token>` — браузерный сокет без заголовков, поэтому токен идёт в query.
+Push (FCM) остаётся каналом для фонового режима, веб получает события только пока вкладка открыта.
+
+```
+letter.sent | letter.delivered | letter.read →
+{ type, letter_id, conversation_id, sender_id, recipient_id, at }
+```
+
+- Сервер **принимает соединение и сразу закрывает** его кодом **4401**, если токен не передан,
+  невалиден или просрочен. Токен проверяется только при подключении: живое соединение
+  переживает истечение access-токена.
+- Клиент отправляет только `"ping"`, получает `{"type": "pong"}` (keepalive); запись идёт по HTTP.
+- Событие получают оба участника пары; клиент решает, что обновить. `letter.sent` — письмо
+  отправлено, `letter.delivered` — долетело, `letter.read` — прочитано.
+- `conversation_id` обязателен у всех трёх событий: `letter.read` публикует его так же, как
+  отправка, — через общий get-or-create диалога пары. WS-эндпоинт умеет достроить id по паре
+  (кэш на время соединения), но это страховка для внутренних `None`, а не часть контракта:
+  клиенту id приходит всегда, и по нему обновляется один чат.
+- Шина — не источник правды: события могут дублироваться (ретраи sweep), оффлайн-клиент их не
+  получает. Состояние всегда догоняется `GET /conversations` и лентой.
+
 ### Друзья и поиск
 
 | Метод и путь | Тело запроса | Успех |
@@ -199,6 +259,8 @@ UserSearchResult        { username, relationship, request_id | null }
   а не решает, что скрыть.
 - Допустимость действия: сервер отвечает 409 `invalid_state`, если переход недопустим
   в текущем статусе.
+- Существование чата и право писать: не-участник получает 404 `not_found`, `can_write: false`
+  после удаления из друзей. Клиент рисует диалог по этим полям, а не по своему списку друзей.
 - Город обязателен для отправки: `send` без города у отправителя — 409 `sender_city_missing`,
   без города у получателя — 409 `recipient_city_missing`. Клиент ведёт на шаг выбора города,
   но решает это не он: отказ приходит от сервера.

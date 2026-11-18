@@ -15,6 +15,8 @@ export default defineConfig({
       '/api': {
         target: apiTarget,
         changeOrigin: true,
+        // Realtime-шина `/ws` бэкенда открывается как `/api/ws` и идёт тем же прокси.
+        ws: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },

@@ -118,7 +118,10 @@ export function CityPicker({ value, onChange, disabled, initialCountryCode }: Ci
           {cities.isPending ? <Spinner /> : null}
 
           {cities.isError ? (
-            <ErrorState message={errorMessage(cities.error)} onRetry={() => void cities.refetch()} />
+            <ErrorState
+              message={errorMessage(cities.error)}
+              onRetry={() => void cities.refetch()}
+            />
           ) : null}
 
           {filteredCities.length > 0 ? (

@@ -16,8 +16,12 @@ function collapsePlurals(keys: string[]): string[] {
 
 describe('словари', () => {
   it.each(Object.keys(resources.ru))('набор ключей %s совпадает в ru и en', (namespace) => {
-    const ru = [...new Set(collapsePlurals(keyPaths(resources.ru[namespace as keyof typeof resources.ru])))].sort()
-    const en = [...new Set(collapsePlurals(keyPaths(resources.en[namespace as keyof typeof resources.en])))].sort()
+    const ru = [
+      ...new Set(collapsePlurals(keyPaths(resources.ru[namespace as keyof typeof resources.ru]))),
+    ].sort()
+    const en = [
+      ...new Set(collapsePlurals(keyPaths(resources.en[namespace as keyof typeof resources.en]))),
+    ].sort()
     expect(en).toEqual(ru)
   })
 })

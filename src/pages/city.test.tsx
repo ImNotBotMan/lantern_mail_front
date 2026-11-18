@@ -144,7 +144,9 @@ describe('выбор города', () => {
     await userEvent.click(await screen.findByRole('radio', { name: named(petersburg) }))
     await userEvent.click(screen.getByRole('button', { name: city('backToCountries') }))
 
-    expect(await screen.findByRole('button', { name: countryButton(countries[0]!) })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: countryButton(countries[0]!) }),
+    ).toBeInTheDocument()
     await openCountry()
     expect(await screen.findByRole('button', { name: city('submit') })).toBeDisabled()
   })

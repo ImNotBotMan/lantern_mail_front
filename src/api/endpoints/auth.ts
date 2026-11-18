@@ -1,9 +1,24 @@
 import { api } from '../client'
-import type { RegisterRequest, TokenResponse } from '../types'
+import type { RegisterRequest, TokenResponse, VerificationRequiredResponse } from '../types'
 
 export const authApi = {
-  register(data: RegisterRequest): Promise<TokenResponse> {
-    return api.request<TokenResponse>('POST', '/auth/register', { body: data, isAuthRequest: true })
+  /** Токенов не выдаёт: сначала подтверждение адреса письмом Firebase. */
+  register(data: RegisterRequest): Promise<VerificationRequiredResponse> {
+    return api.request<VerificationRequiredResponse>('POST', '/auth/register', {
+      body: data,
+      isAuthRequest: true,
+    })
+  },
+
+  /**
+   * Письмо со ссылкой для смены пароля шлёт Firebase. Ответ 204 одинаков для любого адреса,
+   * поэтому наличие аккаунта по нему не определить (docs/specs/api-contract.md).
+   */
+  requestPasswordReset(email: string): Promise<void> {
+    return api.request<void>('POST', '/auth/password/reset', {
+      body: { email },
+      isAuthRequest: true,
+    })
   },
 
   /** Единственный эндпоинт с form-encoded телом: бэкенд принимает OAuth2PasswordRequestForm. */

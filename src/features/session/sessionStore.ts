@@ -3,7 +3,12 @@ import type { SessionBridge } from '../../api/client'
 import { authApi } from '../../api/endpoints/auth'
 import { usersApi } from '../../api/endpoints/users'
 import { ApiError } from '../../api/errors'
-import type { RegisterRequest, TokenResponse, UserResponse } from '../../api/types'
+import type {
+  RegisterRequest,
+  TokenResponse,
+  UserResponse,
+  VerificationRequiredResponse,
+} from '../../api/types'
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './tokens'
 
 export type SessionStatus = 'loading' | 'authenticated' | 'anonymous'
@@ -120,8 +125,12 @@ export async function login(email: string, password: string): Promise<void> {
   await startSession(await authApi.login(email, password))
 }
 
-export async function register(data: RegisterRequest): Promise<void> {
-  await startSession(await authApi.register(data))
+/**
+ * Регистрация сессию не открывает: до подтверждения адреса сервер токенов не выдаёт
+ * (docs/specs/module-session.md). Экран показывает ответ сервера и уводит на вход.
+ */
+export async function register(data: RegisterRequest): Promise<VerificationRequiredResponse> {
+  return authApi.register(data)
 }
 
 /**

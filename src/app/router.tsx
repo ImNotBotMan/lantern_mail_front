@@ -10,6 +10,7 @@ import { FriendsPage } from '../pages/FriendsPage'
 import { InboxPage } from '../pages/InboxPage'
 import { LetterEditorPage } from '../pages/LetterEditorPage'
 import { LetterPage } from '../pages/LetterPage'
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { RegisterPage } from '../pages/RegisterPage'
@@ -64,6 +65,7 @@ export const routes: RouteObject[] = [
         children: [
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
         ],
       },
     ],

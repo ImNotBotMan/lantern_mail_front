@@ -79,6 +79,16 @@ export interface Country {
   city_count: number
 }
 
+/** Ответ регистрации: токенов нет, пока адрес не подтверждён (защита от перебора аккаунтов). */
+export interface VerificationRequiredResponse {
+  email: string
+  verification_required: boolean
+}
+
+export interface PasswordResetRequest {
+  email: string
+}
+
 /** Город справочника: названия на двух языках, страна и координаты для расчёта пути. */
 export interface City {
   id: number
@@ -146,6 +156,10 @@ export type ApiErrorCode =
   | 'not_authenticated'
   | 'invalid_credentials'
   | 'invalid_refresh_token'
+  | 'invalid_token'
+  | 'email_not_verified'
+  | 'email_registered'
+  | 'identity_unavailable'
   | 'forbidden'
   | 'not_found'
   | 'user_not_found'
@@ -153,6 +167,7 @@ export type ApiErrorCode =
   | 'email_taken'
   | 'username_taken'
   | 'username_required'
+  | 'username_already_set'
   | 'not_friends'
   | 'already_friends'
   | 'friend_request_exists'

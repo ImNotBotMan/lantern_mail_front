@@ -45,6 +45,11 @@ tags: [contract, api]
 Ошибки друзей после миграции — по таблице ниже, включая `incoming_friend_request_exists`,
 `friend_request_not_pending` и `forbidden`.
 
+Авторизация сверена с живым `/openapi.json` и `backend/app/api/auth.py`: регистрация — 202
+`VerificationRequiredResponse` без токенов, сброс пароля — 204 на любой адрес (живая проверка:
+неизвестный адрес — 204, невалидный — 422 `validation_error`), недоступный Firebase — 502
+`identity_unavailable` (`app/services/errors.py`).
+
 ## Общие правила
 
 - База: `VITE_API_BASE_URL` (по умолчанию `/api`). В разработке `/api` проксируется Vite на
@@ -79,7 +84,8 @@ tags: [contract, api]
 
 | Метод и путь | Тело запроса | Успех |
 |---|---|---|
-| `POST /auth/register` | JSON `{ email, password, username }` — `username` 3–32, `[a-z0-9_]`, пароль 8–128 | 201 `TokenResponse` |
+| `POST /auth/register` | JSON `{ email, password, username }` — `username` 3–32, `[a-z0-9_]`, пароль 8–128 | 202 `VerificationRequiredResponse` |
+| `POST /auth/password/reset` | JSON `{ email }` | 204 — всегда, для любого адреса |
 | `POST /auth/login` | **form-encoded** (`application/x-www-form-urlencoded`): `username` = email, `password` | 200 `TokenResponse` |
 | `POST /auth/refresh` | JSON `{ refresh_token }` | 200 `TokenResponse` (новая пара) |
 | `POST /auth/logout` | JSON `{ refresh_token }` | 204 |
@@ -93,10 +99,22 @@ tags: [contract, api]
 остальные — JSON.
 
 ```
+VerificationRequiredResponse { email, verification_required: true }
 UserResponse  { id, username | null, created_at, city: City | null, city_changed_at | null }
 City          { id, name_ru, name_en, country_ru, country_en, country_code, latitude, longitude }
 Country       { country_code, name_ru, name_en, city_count }
 ```
+
+**Регистрация токенов не выдаёт.** `POST /auth/register` заводит аккаунт и отвечает 202
+`VerificationRequiredResponse`: пароли и внешние идентичности хранит Firebase, а адрес сначала
+подтверждают письмом. Пока адрес не подтверждён, `/auth/login` отвечает 403 `email_not_verified`
+и повторно отправляет письмо; письмо подтверждения и страницу смены пароля рисует Firebase —
+клиент их не рисует.
+
+**Сброс пароля не раскрывает аккаунты.** `POST /auth/password/reset` отвечает 204 без тела и
+для существующего, и для неизвестного адреса — различить их по ответу нельзя. 422
+`validation_error` — адрес не проходит формат. 502 `identity_unavailable` — Firebase недоступен:
+письмо не ушло, и показывать «письмо отправлено» нельзя.
 
 `city_changed_at` — когда город выбран или сменён в последний раз; от него клиент
 считает, с какой даты смена снова доступна. `null` в `city` — город ещё не выбран.
@@ -188,11 +206,12 @@ UserSearchResult        { username, relationship, request_id | null }
 
 | HTTP | Коды |
 |---|---|
-| 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token` |
-| 403 | `forbidden` |
+| 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token`, `invalid_token` |
+| 403 | `forbidden`, `email_not_verified` |
 | 404 | `not_found`, `user_not_found`, `friend_request_not_found` |
-| 409 | `email_taken`, `username_taken`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
+| 409 | `email_taken`, `email_registered`, `username_taken`, `username_already_set`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
 | 422 | `recipient_not_found`, `friend_request_to_self`, `city_not_found`, `validation_error` (с `details`) |
+| 502 | `identity_unavailable` — Firebase недоступен (вход, регистрация, сброс пароля) |
 
 `invalid_refresh_token` на `/auth/refresh` означает, что сессия закрыта (истекла или
 украдена) — это единственный ответ, по которому клиент разлогинивается.

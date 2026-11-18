@@ -18,6 +18,33 @@
   align-self: flex-start;
 }
 
+.intro {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.support {
+  display: flex;
+  justify-content: flex-end;
+  /* Поле оставляет отступ снизу — ссылка садится прямо под ним */
+  margin: calc(var(--space-4) * -1) 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+.resend {
+  margin-top: var(--space-2);
+}
+
+.cooldown {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
 .footer {
   margin-top: var(--space-5);
   font-family: var(--font-ui);

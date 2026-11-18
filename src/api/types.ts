@@ -71,13 +71,23 @@ export interface RegisterRequest {
   username: string
 }
 
-/** Город справочника: названия на двух языках и координаты для расчёта пути. */
+/** Страна справочника: только страны, в которых есть города. */
+export interface Country {
+  country_code: string
+  name_ru: string
+  name_en: string
+  city_count: number
+}
+
+/** Город справочника: названия на двух языках, страна и координаты для расчёта пути. */
 export interface City {
   id: number
   name_ru: string
   name_en: string
   country_ru: string
   country_en: string
+  /** Код страны ISO 3166-1 alpha-2; ключ шага «страна → город». */
+  country_code: string
   latitude: number
   longitude: number
 }

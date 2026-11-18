@@ -19,7 +19,7 @@ test('анонимного уводит на вход и после входа �
   await expect(page.getByText(user.username)).toBeVisible()
 })
 
-test('регистрация ведёт к выбору города, потом в приложение', async ({ page }) => {
+test('регистрация показывает подтверждение почты, после входа — выбор города', async ({ page }) => {
   const user = newUser()
 
   await page.goto('/register')
@@ -27,6 +27,16 @@ test('регистрация ведёт к выбору города, потом
   await page.getByLabel('Имя').fill(user.username)
   await page.getByLabel('Пароль').fill(user.password)
   await page.getByRole('button', { name: 'Создать аккаунт' }).click()
+
+  // Токенов регистрация не выдаёт: сессии нет, пока адрес не подтверждён
+  await expect(page.getByRole('heading', { name: 'Проверьте почту' })).toBeVisible()
+  await expect(page.getByText(user.email)).toBeVisible()
+
+  // Локально провайдер подтверждает адрес сам: вход работает без реального письма
+  await page.getByRole('link', { name: 'Уже есть аккаунт? Войти' }).click()
+  await page.getByLabel('Email').fill(user.email)
+  await page.getByLabel('Пароль').fill(user.password)
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
 
   await chooseCity(page, 'Санкт-Петербург')
   await expect(page.getByRole('heading', { name: 'Входящие' })).toBeVisible()

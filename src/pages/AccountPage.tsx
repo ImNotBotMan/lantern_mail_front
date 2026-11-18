@@ -96,7 +96,12 @@ export function AccountPage() {
 
         {editingCity ? (
           <form className={styles.cityForm} onSubmit={handleCitySubmit}>
-            <CityPicker value={selectedCity} onChange={setSelectedCity} disabled={savingCity} />
+            <CityPicker
+              value={selectedCity}
+              onChange={setSelectedCity}
+              disabled={savingCity}
+              initialCountryCode={user.city?.country_code ?? null}
+            />
             {cityError ? (
               <p className={styles.alert} role="alert">
                 {errorMessage(cityError)}

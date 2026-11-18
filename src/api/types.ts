@@ -133,13 +133,33 @@ export interface RegisterRequest {
   username: string
 }
 
-/** Город справочника: названия на двух языках и координаты для расчёта пути. */
+/** Страна справочника: только страны, в которых есть города. */
+export interface Country {
+  country_code: string
+  name_ru: string
+  name_en: string
+  city_count: number
+}
+
+/** Ответ регистрации: токенов нет, пока адрес не подтверждён (защита от перебора аккаунтов). */
+export interface VerificationRequiredResponse {
+  email: string
+  verification_required: boolean
+}
+
+export interface PasswordResetRequest {
+  email: string
+}
+
+/** Город справочника: названия на двух языках, страна и координаты для расчёта пути. */
 export interface City {
   id: number
   name_ru: string
   name_en: string
   country_ru: string
   country_en: string
+  /** Код страны ISO 3166-1 alpha-2; ключ шага «страна → город». */
+  country_code: string
   latitude: number
   longitude: number
 }
@@ -198,6 +218,10 @@ export type ApiErrorCode =
   | 'not_authenticated'
   | 'invalid_credentials'
   | 'invalid_refresh_token'
+  | 'invalid_token'
+  | 'email_not_verified'
+  | 'email_registered'
+  | 'identity_unavailable'
   | 'forbidden'
   | 'not_found'
   | 'user_not_found'
@@ -205,6 +229,7 @@ export type ApiErrorCode =
   | 'email_taken'
   | 'username_taken'
   | 'username_required'
+  | 'username_already_set'
   | 'not_friends'
   | 'already_friends'
   | 'friend_request_exists'

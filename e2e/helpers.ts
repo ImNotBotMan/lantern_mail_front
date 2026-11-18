@@ -45,7 +45,9 @@ export async function createUser(
   }
   if (cityId === null) return user
 
-  const token = ((await response.json()) as { access_token: string }).access_token
+  // Регистрация токенов не выдаёт — сначала подтверждение адреса. Локально провайдер
+  // подтверждает его сам, поэтому вход отдельным запросом работает без письма.
+  const token = await apiAccessToken(request, user)
   const withCity = await request.patch(`${API_BASE_URL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
     data: { city_id: cityId },
@@ -56,9 +58,13 @@ export async function createUser(
   return user
 }
 
-/** Выбор города на экране онбординга: дальше продукт доступен только с городом. */
+/** Выбор города на экране онбординга: страна → город с поиском. Дальше продукт доступен только с городом. */
 export async function chooseCity(page: Page, city: string): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Выберите город' })).toBeVisible()
+  // Первый шаг — страна; названия городов одинаковы в разных странах, поэтому фиксированная
+  // страна сценария: справочник e2e — сеяный, а локаль ru-RU
+  await page.getByRole('button', { name: 'Россия' }).click()
+  await page.getByPlaceholder('Найти город…').fill(city)
   // Радиокнопка справочника визуально спрятана внутри подписи: пользователь кликает по подписи
   await page.locator('label', { hasText: city }).click()
   await expect(page.getByRole('radio', { name: new RegExp(city) })).toBeChecked()

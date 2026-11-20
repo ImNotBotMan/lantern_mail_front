@@ -5,21 +5,21 @@ import { useTranslation } from 'react-i18next'
 import { errorMessage } from '../../shared/i18n/apiError'
 import { Button, Textarea } from '../../shared/ui'
 import styles from './chats.module.css'
-import { useSendMessage } from './useChatActions'
+import { useSealMessage } from './useChatActions'
 
 /**
- * Ответ прямо из ленты: письмо создаётся, запечатывается и отправляется одной кнопкой.
- * Пустой текст кнопку выключает лишь как подсказку — настоящую проверку делает сервер.
+ * Ответ прямо из ленты: письмо создаётся и запечатывается. Отправить его — отдельное решение
+ * отправителя в блоке запечатанных писем над композером. Пустой текст кнопку выключает лишь как подсказку — настоящую проверку делает сервер.
  */
 export function ChatComposer({ recipient }: { recipient: string }) {
   const { t } = useTranslation('chats')
   const [body, setBody] = useState('')
-  const { mutate: send, isPending, error, reset } = useSendMessage()
+  const { mutate: seal, isPending, error, reset } = useSealMessage()
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (isPending || body.trim() === '') return
-    send({ recipient, body }, { onSuccess: () => setBody('') })
+    seal({ recipient, body }, { onSuccess: () => setBody('') })
   }
 
   return (
@@ -29,7 +29,7 @@ export function ChatComposer({ recipient }: { recipient: string }) {
         placeholder={t('composer.placeholder')}
         value={body}
         rows={4}
-        // Успешная отправка очищает поле: правки, внесённые во время отправки, пропали бы.
+        // Успешное запечатывание очищает поле: правки, внесённые во время него, пропали бы.
         readOnly={isPending}
         onChange={(event) => {
           setBody(event.target.value)
@@ -43,7 +43,7 @@ export function ChatComposer({ recipient }: { recipient: string }) {
       ) : null}
       <div className={styles.composerActions}>
         <Button type="submit" disabled={isPending || body.trim() === ''}>
-          {isPending ? t('composer.sending') : t('composer.send')}
+          {isPending ? t('composer.sealing') : t('composer.seal')}
         </Button>
         <p className={styles.hint}>{t('composer.hint')}</p>
       </div>

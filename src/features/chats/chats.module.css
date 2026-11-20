@@ -131,3 +131,15 @@
   border: 1px dashed var(--color-line);
   border-radius: var(--radius-md);
 }
+
+.sealed {
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--color-line);
+}
+
+.sealedTitle {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}

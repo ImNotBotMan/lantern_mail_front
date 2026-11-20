@@ -11,6 +11,7 @@ import { ChatComposer } from './ChatComposer'
 import { chatTitle } from './chatTitle'
 import styles from './chats.module.css'
 import { chatsPaths } from './paths'
+import { SealedLetters } from './SealedLetters'
 import { useReadOnShow } from './useChatActions'
 import { useConversationFeed } from './useChats'
 
@@ -115,7 +116,12 @@ export function ChatFeed({ id }: { id: string }) {
         </ol>
       )}
 
-      {conversation.can_write && recipient ? <ChatComposer recipient={recipient} /> : null}
+      {conversation.can_write && recipient ? (
+        <>
+          <SealedLetters recipient={recipient} />
+          <ChatComposer recipient={recipient} />
+        </>
+      ) : null}
       {conversation.can_write ? null : <p className={styles.frozen}>{t('chat.frozen')}</p>}
     </section>
   )

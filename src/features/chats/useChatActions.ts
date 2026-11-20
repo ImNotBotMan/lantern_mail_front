@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiError, lettersApi } from '../../api'
 import type { AnyLetter, LetterResponse } from '../../api'
 import { lettersQueryKey } from '../letters/queryKeys'
+import { useSentLetters } from '../letters/useLetters'
 import { chatsQueryKey } from './queryKeys'
 
 /** Письмо из чата видно и в ленте, и во входящих/отправленных — сбрасываем оба корня. */
@@ -22,10 +23,10 @@ export interface ChatMessage {
 }
 
 /**
- * Довозит письмо до отправки с того шага, где остановилась прошлая попытка. Следующий шаг
- * выбирается по `status` из последнего ответа сервера, а не угадывается.
+ * Довозит письмо до запечатывания с того шага, где остановилась прошлая попытка. Следующий
+ * шаг выбирается по `status` из последнего ответа сервера, а не угадывается.
  */
-async function deliver(
+async function seal(
   message: ChatMessage,
   unfinished: LetterResponse | null,
   remember: (letter: LetterResponse) => LetterResponse,
@@ -36,39 +37,54 @@ async function deliver(
       await lettersApi.create({ recipient_username: message.recipient, body: message.body }),
     )
   } else if (unfinished.body !== message.body) {
-    // Текст поправили после неудачной попытки: письмо уходит с новым текстом.
-    letter = unfinished
-    if (letter.status === 'sealed') letter = remember(await lettersApi.unseal(letter.id))
-    letter = remember(await lettersApi.update(letter.id, { body: message.body }))
+    // Текст поправили после неудачной попытки: запечатываем уже новый текст.
+    letter = remember(await lettersApi.update(unfinished.id, { body: message.body }))
   } else {
     letter = unfinished
   }
 
-  if (letter.status === 'draft') letter = remember(await lettersApi.seal(letter.id))
-  return lettersApi.send(letter.id)
+  return lettersApi.seal(letter.id)
 }
 
 /**
- * Отправка из композера одним действием: создать → запечатать → отправить. Если шаг упал
- * (например, обрыв связи), повтор продолжает то же письмо, а не плодит черновики в отправленных.
+ * Запечатывание из композера: создать → запечатать. Отправка — отдельный шаг отправителя
+ * (docs/letter-lifecycle.md), её делает `SealedLetters`. Если шаг упал, повтор продолжает
+ * тот же черновик, а не плодит новые в отправленных.
  */
-export function useSendMessage() {
+export function useSealMessage() {
   const invalidate = useInvalidateLetters()
   const [unfinished, setUnfinished] = useState<LetterResponse | null>(null)
 
   return useMutation({
     mutationFn: (message: ChatMessage) => {
       const resumable = unfinished?.recipient_username === message.recipient ? unfinished : null
-      return deliver(message, resumable, (letter) => {
+      return seal(message, resumable, (letter) => {
         setUnfinished(letter)
         return letter
       })
     },
     onSuccess: () => setUnfinished(null),
     onError: (error) => {
-      // Сервер считает, что письмо уже ушло дальше, чем мы знаем: продолжать его вслепую нельзя.
+      // Сервер считает, что черновик уже не черновик: продолжать его вслепую нельзя.
       if (error instanceof ApiError && error.code === 'invalid_state') setUnfinished(null)
     },
+    onSettled: invalidate,
+  })
+}
+
+/** Запечатанные письма собеседнику: в ленту чата они не попадают, ждут отправки здесь. */
+export function useSealedFor(recipient: string) {
+  const { data } = useSentLetters()
+  return (data ?? []).filter(
+    (letter) => letter.status === 'sealed' && letter.recipient_username === recipient,
+  )
+}
+
+/** Отправленное письмо появляется в ленте чата — сбрасываем и чаты, и письма. */
+export function useSendSealed() {
+  const invalidate = useInvalidateLetters()
+  return useMutation({
+    mutationFn: (id: string) => lettersApi.send(id),
     onSettled: invalidate,
   })
 }

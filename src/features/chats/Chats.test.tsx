@@ -11,6 +11,7 @@ import type {
   LetterCreate,
   LetterEvent,
   LetterResponse,
+  LetterUpdate,
 } from '../../api/types'
 import {
   annaChat,
@@ -60,33 +61,59 @@ function feedServer(pages: Record<string, ConversationFeed>) {
   return state
 }
 
-/** Сервер отправки: запоминает шаги и отдаёт письмо с тем текстом, что пришёл. */
-function sendServer() {
-  const state = { steps: [] as string[], failSend: false }
-  let created: LetterResponse = letter
+/**
+ * Сервер писем для композера: запоминает шаги и хранит письма, чтобы `/letters/sent`
+ * отдавал запечатанные. `failSeal` / `failSend` — ответ 409 на соответствующий шаг.
+ */
+function lettersServer() {
+  const state = { steps: [] as string[], failSeal: false, failSend: false }
+  const letters = new Map<string, LetterResponse>()
+  let nextId = 1
 
   server.use(
+    http.get('*/api/letters/sent', () => HttpResponse.json([...letters.values()])),
     http.post('*/api/letters', async ({ request }) => {
       const data = (await request.json()) as LetterCreate
       state.steps.push(`create:${data.recipient_username ?? ''}:${data.body ?? ''}`)
-      created = {
+      const created: LetterResponse = {
         ...letter,
+        id: `chat-letter-${nextId++}`,
         recipient_username: data.recipient_username ?? null,
         body: data.body ?? '',
       }
+      letters.set(created.id, created)
       return HttpResponse.json(created, { status: 201 })
     }),
-    http.post('*/api/letters/:id/seal', () => {
-      state.steps.push('seal')
-      created = { ...created, status: 'sealed' }
-      return HttpResponse.json(created)
+    http.patch('*/api/letters/:id', async ({ params, request }) => {
+      const data = (await request.json()) as LetterUpdate
+      state.steps.push(`update:${data.body ?? ''}`)
+      const id = String(params.id)
+      const updated = { ...letters.get(id)!, body: data.body ?? '' }
+      letters.set(id, updated)
+      return HttpResponse.json(updated)
     }),
-    http.post('*/api/letters/:id/send', () => {
+    http.post('*/api/letters/:id/seal', ({ params }) => {
+      state.steps.push('seal')
+      if (state.failSeal) {
+        return HttpResponse.json(
+          { error: 'sender_city_missing', message: 'No city' },
+          { status: 409 },
+        )
+      }
+      const id = String(params.id)
+      const sealed: LetterResponse = { ...letters.get(id)!, status: 'sealed' }
+      letters.set(id, sealed)
+      return HttpResponse.json(sealed)
+    }),
+    http.post('*/api/letters/:id/send', ({ params }) => {
       state.steps.push('send')
       if (state.failSend) {
         return HttpResponse.json({ error: 'not_friends', message: 'Not friends' }, { status: 409 })
       }
-      return HttpResponse.json({ ...created, status: 'in_transit' })
+      const id = String(params.id)
+      const sent: LetterResponse = { ...letters.get(id)!, status: 'in_transit' }
+      letters.set(id, sent)
+      return HttpResponse.json(sent)
     }),
   )
 
@@ -110,7 +137,8 @@ async function renderChat(card: ConversationCard) {
 }
 
 const composerField = () => screen.findByRole('textbox', { name: label('composer.label') })
-const sendButton = () => screen.getByRole('button', { name: label('composer.send') })
+const sealButton = () => screen.getByRole('button', { name: label('composer.seal') })
+const sealedBlock = () => screen.findByRole('region', { name: label('sealed.title') })
 
 describe('список чатов', () => {
   it('держит порядок сервера: «Себе» в конце, летящее без текста, замороженный помечен', async () => {
@@ -260,57 +288,100 @@ describe('лента диалога', () => {
 })
 
 describe('композер', () => {
-  it('отправляет письмо одним действием: создать → запечатать → отправить', async () => {
-    const state = sendServer()
+  it('запечатывает письмо, но не отправляет его', async () => {
+    const state = lettersServer()
     const feed = feedServer({ '': feedOf(annaChat, [fromAnna]) })
     await renderChat(annaChat)
 
     const field = await composerField()
     await userEvent.type(field, 'Как дела?')
-    await userEvent.click(sendButton())
+    await userEvent.click(sealButton())
 
-    await waitFor(() => expect(state.steps).toEqual(['create:anna:Как дела?', 'seal', 'send']))
     await waitFor(() => expect(field).toHaveValue(''))
-    // Лента перечитана после отправки.
+    const sealed = within(await sealedBlock())
+    expect(await sealed.findByText('Как дела?')).toBeInTheDocument()
+    expect(sealed.getByRole('button', { name: label('sealed.send') })).toBeInTheDocument()
+    expect(state.steps).toEqual(['create:anna:Как дела?', 'seal'])
+    // Лента перечитана, но письма в ней нет: запечатанное в чат не попадает.
     await waitFor(() => expect(feed.cursors).toHaveLength(2))
   })
 
-  it('в чате «Себе» письмо уходит самому пользователю', async () => {
-    const state = sendServer()
+  it('отправляет запечатанное отдельным шагом после подтверждения', async () => {
+    const state = lettersServer()
+    const feed = feedServer({ '': feedOf(annaChat) })
+    await renderChat(annaChat)
+
+    await userEvent.type(await composerField(), 'Как дела?')
+    await userEvent.click(sealButton())
+    const sealed = within(await sealedBlock())
+
+    await userEvent.click(sealed.getByRole('button', { name: label('sealed.send') }))
+    expect(sealed.getByText(label('sealed.confirm'))).toBeInTheDocument()
+    expect(state.steps).toEqual(['create:anna:Как дела?', 'seal'])
+
+    await userEvent.click(sealed.getByRole('button', { name: label('sealed.confirmYes') }))
+
+    await waitFor(() => expect(state.steps).toEqual(['create:anna:Как дела?', 'seal', 'send']))
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: label('sealed.title') })).toBeNull(),
+    )
+    await waitFor(() => expect(feed.cursors.length).toBeGreaterThanOrEqual(3))
+  })
+
+  it('ошибку отправки показывает у запечатанного письма', async () => {
+    const state = lettersServer()
+    state.failSend = true
+    feedServer({ '': feedOf(annaChat) })
+    await renderChat(annaChat)
+
+    await userEvent.type(await composerField(), 'Привет')
+    await userEvent.click(sealButton())
+    const sealed = within(await sealedBlock())
+    await userEvent.click(sealed.getByRole('button', { name: label('sealed.send') }))
+    await userEvent.click(sealed.getByRole('button', { name: label('sealed.confirmYes') }))
+
+    expect(await sealed.findByRole('alert')).toHaveTextContent(t('not_friends', 'errors'))
+    expect(sealed.getByText('Привет')).toBeInTheDocument()
+  })
+
+  it('в чате «Себе» письмо запечатывается самому пользователю', async () => {
+    const state = lettersServer()
     feedServer({ '': feedOf(selfChat) })
     await renderChat(selfChat)
 
     expect(await screen.findByRole('heading', { name: label('chat.self') })).toBeInTheDocument()
     await userEvent.type(await composerField(), 'Себе в будущее')
-    await userEvent.click(sendButton())
+    await userEvent.click(sealButton())
 
-    const expected = [`create:${me.username ?? ''}:Себе в будущее`, 'seal', 'send']
+    const expected = [`create:${me.username ?? ''}:Себе в будущее`, 'seal']
     await waitFor(() => expect(state.steps).toEqual(expected))
+    expect(await sealedBlock()).toBeInTheDocument()
   })
 
-  it('ошибку показывает в композере, а повтор продолжает то же письмо', async () => {
-    const state = sendServer()
-    state.failSend = true
+  it('ошибку показывает в композере, а повтор продолжает тот же черновик', async () => {
+    const state = lettersServer()
+    state.failSeal = true
     feedServer({ '': feedOf(annaChat) })
     await renderChat(annaChat)
 
     const field = await composerField()
     await userEvent.type(field, 'Привет')
-    await userEvent.click(sendButton())
+    await userEvent.click(sealButton())
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(t('not_friends', 'errors'))
+    expect(await screen.findByRole('alert')).toHaveTextContent(t('sender_city_missing', 'errors'))
     expect(field).toHaveValue('Привет')
 
-    state.failSend = false
-    await userEvent.click(sendButton())
+    state.failSeal = false
+    await userEvent.type(field, '!')
+    await userEvent.click(sealButton())
 
-    const expected = ['create:anna:Привет', 'seal', 'send', 'send']
+    const expected = ['create:anna:Привет', 'seal', 'update:Привет!', 'seal']
     await waitFor(() => expect(state.steps).toEqual(expected))
-    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    await waitFor(() => expect(field).toHaveValue(''))
   })
 
-  it('повторный клик во время отправки второго письма не создаёт', async () => {
-    const state = sendServer()
+  it('повторный клик во время запечатывания второго письма не создаёт', async () => {
+    const state = lettersServer()
     const gate = { open: () => {} }
     const opened = new Promise<void>((resolve) => {
       gate.open = resolve
@@ -327,13 +398,13 @@ describe('композер', () => {
     await renderChat(annaChat)
 
     await userEvent.type(await composerField(), 'Один раз')
-    await userEvent.click(sendButton())
-    const sending = await screen.findByRole('button', { name: label('composer.sending') })
-    expect(sending).toBeDisabled()
-    await userEvent.click(sending)
+    await userEvent.click(sealButton())
+    const sealing = await screen.findByRole('button', { name: label('composer.sealing') })
+    expect(sealing).toBeDisabled()
+    await userEvent.click(sealing)
     gate.open()
 
-    await waitFor(() => expect(state.steps).toEqual(['create:anna', 'seal', 'send']))
+    await waitFor(() => expect(state.steps).toEqual(['create:anna', 'seal']))
   })
 
   it('замороженный чат читается, но композера нет', async () => {

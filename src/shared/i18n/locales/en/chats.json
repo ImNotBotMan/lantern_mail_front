@@ -18,8 +18,15 @@
   "composer": {
     "label": "New letter",
     "placeholder": "Write a letter…",
-    "hint": "The letter will be sealed and sent on its way right away.",
+    "hint": "The letter will be sealed and wait above — send it when you're ready.",
+    "seal": "Seal",
+    "sealing": "Sealing…"
+  },
+  "sealed": {
+    "title": "Sealed, waiting to be sent",
     "send": "Send",
+    "confirm": "The letter will go to the recipient and can't be taken back. Send it?",
+    "confirmYes": "Send",
     "sending": "Sending…"
   }
 }

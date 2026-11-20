@@ -11,6 +11,7 @@ import type {
   IncomingLetterPreview,
   LetterResponse,
   OutgoingFriendRequest,
+  Stamp,
   TokenResponse,
   UserResponse,
   UserSearchResult,
@@ -136,6 +137,26 @@ export const readIncomingLetter: IncomingLetter = {
 }
 
 export const friend: Friend = { username: 'anna', friends_since: '2026-01-01T12:00:00Z' }
+
+/** Марка с остатком и картинкой-заглушкой: `image_url` пока `null` у всех видов. */
+export const winterStamp: Stamp = {
+  id: 1,
+  name_ru: 'Первая зимняя',
+  name_en: 'First winter',
+  image_url: null,
+  quantity: 4,
+}
+
+/** Вид без запаса: сервер его тоже отдаёт, клиент помечает «закончилось». */
+export const doveStamp: Stamp = {
+  id: 2,
+  name_ru: 'Голубь',
+  name_en: 'Dove',
+  image_url: null,
+  quantity: 0,
+}
+
+export const stamps: Stamp[] = [winterStamp, doveStamp]
 
 export const incomingRequest: IncomingFriendRequest = {
   id: '22222222-2222-2222-2222-222222222222',
@@ -284,6 +305,8 @@ export const handlers = [
       if (event.data === 'ping') client.send(JSON.stringify({ type: 'pong' }))
     })
   }),
+
+  http.get(`${BASE}/stamps`, () => HttpResponse.json(stamps)),
 
   http.get(`${BASE}/friends`, () => HttpResponse.json([friend])),
   http.delete(`${BASE}/friends/:username`, () => new HttpResponse(null, { status: 204 })),

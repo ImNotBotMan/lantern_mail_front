@@ -1,9 +1,15 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import type { AnyLetter, LetterCreate, LetterResponse, LetterUpdate } from '../../api/types'
+import type {
+  AnyLetter,
+  LetterCreate,
+  LetterResponse,
+  LetterSeal,
+  LetterUpdate,
+} from '../../api/types'
 import i18n from '../../shared/i18n'
 import { letter as draftLetter } from '../../test/msw/handlers'
 import { server } from '../../test/msw/server'
@@ -23,6 +29,8 @@ function editorServer(initial: LetterResponse | null = null) {
     created: [] as LetterCreate[],
     patches: [] as LetterUpdate[],
     seals: [] as string[],
+    /** Марки из тел запечатывания: `null` — «без марки» (поля в теле нет). */
+    sealStamps: [] as (number | null)[],
   }
   if (initial) state.byId.set(initial.id, initial)
 
@@ -60,9 +68,11 @@ function editorServer(initial: LetterResponse | null = null) {
       state.byId.set(updated.id, updated)
       return HttpResponse.json(updated)
     }),
-    http.post('*/api/letters/:id/seal', ({ params }) => {
+    http.post('*/api/letters/:id/seal', async ({ params, request }) => {
       const id = String(params.id)
+      const data = (await request.json()) as LetterSeal
       state.seals.push(id)
+      state.sealStamps.push(data.stamp_id ?? null)
       const current = state.byId.get(id)
       if (!current) return notFound()
       const sealed = {
@@ -136,10 +146,14 @@ describe('редактор письма', () => {
     expect(seal).toBeEnabled()
 
     await userEvent.click(seal)
+    // Запечатывание спрашивает марку: по умолчанию «без марки», подтверждаем как есть.
+    const dialog = within(await screen.findByRole('dialog', { name: label('seal.title') }))
+    await userEvent.click(dialog.getByRole('button', { name: label('seal.confirm') }))
 
     expect(await screen.findByRole('heading', { name: label('letter.title') })).toBeInTheDocument()
     expect(await screen.findByText('Привет')).toBeInTheDocument()
     expect(state.seals).toEqual(['created-1'])
+    expect(state.sealStamps).toEqual([null])
   })
 
   it('заполняет поля сохранённым черновиком', async () => {

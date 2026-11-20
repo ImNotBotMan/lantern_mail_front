@@ -19,8 +19,7 @@
     "label": "New letter",
     "placeholder": "Write a letter…",
     "hint": "The letter will be sealed and wait above — send it when you're ready.",
-    "seal": "Seal",
-    "sealing": "Sealing…"
+    "seal": "Seal"
   },
   "sealed": {
     "title": "Sealed, waiting to be sent",

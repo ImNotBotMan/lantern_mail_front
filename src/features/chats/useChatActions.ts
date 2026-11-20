@@ -20,6 +20,8 @@ function useInvalidateLetters() {
 export interface ChatMessage {
   recipient: string
   body: string
+  /** `null` — «без марки»: поле не уходит вовсе. */
+  stampId: number | null
 }
 
 /**
@@ -43,13 +45,13 @@ async function seal(
     letter = unfinished
   }
 
-  return lettersApi.seal(letter.id)
+  return lettersApi.seal(letter.id, { stamp_id: message.stampId ?? undefined })
 }
 
 /**
- * Запечатывание из композера: создать → запечатать. Отправка — отдельный шаг отправителя
- * (docs/letter-lifecycle.md), её делает `SealedLetters`. Если шаг упал, повтор продолжает
- * тот же черновик, а не плодит новые в отправленных.
+ * Запечатывание из композера: создать → запечатать (марка — в теле запечатывания).
+ * Отправка — отдельный шаг отправителя (docs/letter-lifecycle.md), её делает `SealedLetters`.
+ * Если шаг упал, повтор продолжает тот же черновик, а не плодит новые в отправленных.
  */
 export function useSealMessage() {
   const invalidate = useInvalidateLetters()

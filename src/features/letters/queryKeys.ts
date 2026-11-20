@@ -12,3 +12,9 @@ export const inboxLettersQueryKey = [...lettersQueryKey, 'inbox'] as const
 
 /** Письмо по id — отдельно от списков, чтобы экран письма не тянул весь список. */
 export const letterQueryKey = (id: string) => [...lettersQueryKey, 'letter', id] as const
+
+/**
+ * Коллекция марок — не под корнем писем: остаток меняется и распечаткой, и удалением
+ * запечатанного, поэтому запечатывание сбрасывает оба корня.
+ */
+export const stampsQueryKey = ['stamps'] as const

@@ -12,6 +12,7 @@ import { LetterView } from './LetterView'
 import styles from './letters.module.css'
 import { lettersPaths } from './paths'
 import { RecipientSelect } from './RecipientSelect'
+import { SealLetterDialog } from './SealLetterDialog'
 import {
   useCreateLetter,
   useDeleteLetter,
@@ -46,8 +47,11 @@ export function LetterEditor({ letterId }: LetterEditorProps) {
   const [loadedId, setLoadedId] = useState<string | null>(null)
   const [failure, setFailure] = useState<unknown>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [sealing, setSealing] = useState(false)
   // Программный переход после сохранения или удаления не должен спрашивать про несохранённое.
   const leaving = useRef(false)
+  // id черновика, сохранённого в первой попытке запечатать: повтор не плодит второй.
+  const draftId = useRef<string | null>(null)
 
   const saved = letter?.view === 'sender' ? letter : null
   const dirty = saved
@@ -82,12 +86,15 @@ export function LetterEditor({ letterId }: LetterEditorProps) {
 
   const busy = create.isPending || update.isPending || seal.isPending || remove.isPending
 
-  /** Сохраняет письмо и возвращает его id: новый черновик создаётся первым сохранением. */
-  async function persist(): Promise<string> {
+  /**
+   * Сохраняет письмо и возвращает его id: существующий черновик обновляется, новый создаётся
+   * первым сохранением. `knownId` — черновик, созданный прошлой попыткой запечатать.
+   */
+  async function persist(knownId: string | null = saved?.id ?? null): Promise<string> {
     const payload = { recipient_username: recipient === '' ? null : recipient, body }
-    if (saved) {
-      await update.mutateAsync({ id: saved.id, data: payload })
-      return saved.id
+    if (knownId) {
+      await update.mutateAsync({ id: knownId, data: payload })
+      return knownId
     }
     const created = await create.mutateAsync(payload)
     return created.id
@@ -113,14 +120,19 @@ export function LetterEditor({ letterId }: LetterEditorProps) {
     })
   }
 
-  /** Запечатать можно только с получателем и текстом — то же правило проверяет сервер. */
-  async function sealAndOpen() {
-    await run(async () => {
-      const id = await persist()
-      await seal.mutateAsync(id)
-      leaving.current = true
-      navigate(lettersPaths.letter(id), { replace: true })
-    })
+  /**
+   * Запечатать можно только с получателем и текстом — то же правило проверяет сервер.
+   * Черновик сохраняется первым шагом: марка прикладывается к письму, у которого уже есть id.
+   * Повтор после ошибки запечатывает уже сохранённый черновик, а не создаёт второй.
+   * Ошибка уходит в диалог выбора марки, а не в общий список ошибок редактора.
+   */
+  async function sealAndOpen(stampId: number | null) {
+    const id = await persist(saved?.id ?? draftId.current)
+    draftId.current = id
+    await seal.mutateAsync({ id, stampId })
+    leaving.current = true
+    setSealing(false)
+    navigate(lettersPaths.letter(id), { replace: true })
   }
 
   async function deleteLetter() {
@@ -176,70 +188,74 @@ export function LetterEditor({ letterId }: LetterEditorProps) {
   }
 
   return (
-    <form className={styles.editor} onSubmit={(event) => void save(event)}>
-      <h1>{saved ? t('editor.editTitle') : t('editor.title')}</h1>
+    <>
+      <form className={styles.editor} onSubmit={(event) => void save(event)}>
+        <h1>{saved ? t('editor.editTitle') : t('editor.title')}</h1>
 
-      <RecipientSelect value={recipient} onChange={setRecipient} disabled={busy} />
+        <RecipientSelect value={recipient} onChange={setRecipient} disabled={busy} />
 
-      <Textarea
-        label={t('editor.body')}
-        value={body}
-        rows={12}
-        maxLength={BODY_MAX_LENGTH}
-        placeholder={t('editor.bodyPlaceholder')}
-        disabled={busy}
-        onChange={(event) => setBody(event.target.value)}
-      />
+        <Textarea
+          label={t('editor.body')}
+          value={body}
+          rows={12}
+          maxLength={BODY_MAX_LENGTH}
+          placeholder={t('editor.bodyPlaceholder')}
+          disabled={busy}
+          onChange={(event) => setBody(event.target.value)}
+        />
 
-      {failure ? (
-        <p className={styles.error} role="alert">
-          {errorMessage(failure)}
-        </p>
-      ) : null}
-
-      <div className={styles.editorActions}>
-        <Button type="submit" disabled={!dirty || busy}>
-          {t('editor.save')}
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => void sealAndOpen()}
-          disabled={recipient === '' || body.trim() === '' || busy}
-        >
-          {t('editor.seal')}
-        </Button>
-        {saved ? (
-          <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
-            {t('editor.delete')}
-          </Button>
+        {failure ? (
+          <p className={styles.error} role="alert">
+            {errorMessage(failure)}
+          </p>
         ) : null}
-      </div>
 
-      {confirmDelete ? (
-        <div className={styles.unsaved}>
-          <p>{t('editor.deleteConfirm')}</p>
-          <div className={styles.confirmActions}>
-            <Button variant="danger" onClick={() => void deleteLetter()} disabled={busy}>
-              {t('editor.deleteConfirmYes')}
+        <div className={styles.editorActions}>
+          <Button type="submit" disabled={!dirty || busy}>
+            {t('editor.save')}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setSealing(true)}
+            disabled={recipient === '' || body.trim() === '' || busy}
+          >
+            {t('editor.seal')}
+          </Button>
+          {saved ? (
+            <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
+              {t('editor.delete')}
             </Button>
-            <Button variant="secondary" onClick={() => setConfirmDelete(false)} disabled={busy}>
-              {t('common:actions.cancel')}
-            </Button>
-          </div>
+          ) : null}
         </div>
-      ) : null}
 
-      {blocked ? (
-        <div className={styles.unsaved}>
-          <p>{t('editor.unsaved')}</p>
-          <div className={styles.confirmActions}>
-            <Button onClick={() => blocked.proceed()}>{t('editor.unsavedLeave')}</Button>
-            <Button variant="secondary" onClick={() => blocked.reset()}>
-              {t('editor.unsavedStay')}
-            </Button>
+        {confirmDelete ? (
+          <div className={styles.unsaved}>
+            <p>{t('editor.deleteConfirm')}</p>
+            <div className={styles.confirmActions}>
+              <Button variant="danger" onClick={() => void deleteLetter()} disabled={busy}>
+                {t('editor.deleteConfirmYes')}
+              </Button>
+              <Button variant="secondary" onClick={() => setConfirmDelete(false)} disabled={busy}>
+                {t('common:actions.cancel')}
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : null}
-    </form>
+        ) : null}
+
+        {blocked ? (
+          <div className={styles.unsaved}>
+            <p>{t('editor.unsaved')}</p>
+            <div className={styles.confirmActions}>
+              <Button onClick={() => blocked.proceed()}>{t('editor.unsavedLeave')}</Button>
+              <Button variant="secondary" onClick={() => blocked.reset()}>
+                {t('editor.unsavedStay')}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </form>
+
+      {sealing ? <SealLetterDialog onSeal={sealAndOpen} onClose={() => setSealing(false)} /> : null}
+    </>
   )
 }

@@ -39,17 +39,6 @@
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
 }
 
-/* Вид без остатка виден, но выбрать его нельзя. */
-.out {
-  color: var(--color-ink-muted);
-  cursor: not-allowed;
-}
-
-.out .placeholder {
-  border-color: var(--color-line);
-  opacity: 0.5;
-}
-
 /* Радиокнопка остаётся в разметке для клавиатуры и скринридера, но не видна. */
 .input {
   position: absolute;
@@ -84,17 +73,8 @@
   color: var(--color-danger);
 }
 
-/* Заглушка вместо картинки марки: общая иконка, битых картинок быть не должно. */
-.placeholder,
+/* Заглушка вместо картинки марки: размер задаёт карточка (Tailwind), здесь — только вид. */
 .image {
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 3px;
-}
-
-.image {
-  object-fit: cover;
   border: 1px solid var(--color-line);
   background: var(--color-surface);
 }

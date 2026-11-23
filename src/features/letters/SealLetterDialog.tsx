@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CardBody, CardContainer, CardItem } from '@/components/ui/3d-card'
+import { cn } from '@/lib/utils'
+
 import type { Stamp } from '../../api'
 import { errorMessage } from '../../shared/i18n/apiError'
 import { Button, Dialog, ErrorState, Spinner } from '../../shared/ui'
@@ -8,11 +11,9 @@ import styles from './SealLetterDialog.module.css'
 import { stampName } from './stampName'
 import { useStamps } from './useStamps'
 
-/** Классы строки выбора: активная подсвечена, вид без остатка приглушён. */
-function optionClass(active: boolean, out = false): string {
-  return [styles.option, active ? styles.optionActive : '', out ? styles.out : '']
-    .filter(Boolean)
-    .join(' ')
+/** Классы строки «без марки»: активная подсвечена. */
+function optionClass(active: boolean): string {
+  return cn(styles.option, active && styles.optionActive)
 }
 
 interface SealLetterDialogProps {
@@ -117,29 +118,76 @@ interface StampOptionProps {
   onSelect: () => void
 }
 
-/** Вид с нулевым остатком виден, но не выбирается: «закончилось» — подсказка, а не запрет. */
+/**
+ * Марка — 3D-карточка Aceternity (`components/ui/3d-card`): наклоняется за курсором, слои
+ * выезжают на разную глубину. Вся карточка — `<label>` скрытой радиокнопки, поэтому выбор
+ * работает и с клавиатуры, и скринридером. Вид с нулевым остатком виден, но не выбирается:
+ * «закончилось» — подсказка, а не запрет.
+ */
 function StampOption({ stamp, language, checked, onSelect }: StampOptionProps) {
   const { t } = useTranslation('letters')
   const out = stamp.quantity === 0
 
   return (
-    <label className={optionClass(checked, out)}>
-      <input
-        type="radio"
-        name="stamp"
-        className={styles.input}
-        checked={checked}
-        disabled={out}
-        onChange={onSelect}
-      />
-      <StampImage stamp={stamp} />
-      <span className={styles.optionMain}>
-        <span className={styles.optionName}>{stampName(stamp, language)}</span>
-        <span className={out ? styles.optionMetaOut : styles.optionMeta}>
-          {out ? t('seal.out') : t('seal.left', { count: stamp.quantity })}
-        </span>
-      </span>
-    </label>
+    <CardContainer containerClassName="py-2" className="w-full">
+      <CardBody
+        className={cn(
+          'relative h-auto w-full rounded-xl border p-4 transition-shadow',
+          'border-line bg-surface',
+          'hover:shadow-xl hover:shadow-[rgb(43_36_28/12%)]',
+          checked && 'border-accent shadow-[inset_0_0_0_1px_var(--color-accent)]',
+          out && 'opacity-60',
+        )}
+      >
+        <label
+          className={cn(
+            'block [transform-style:preserve-3d] has-[:focus-visible]:outline-2',
+            'has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-accent',
+            out ? 'cursor-not-allowed' : 'cursor-pointer',
+          )}
+        >
+          <input
+            type="radio"
+            name="stamp"
+            className={styles.input}
+            checked={checked}
+            disabled={out}
+            onChange={onSelect}
+          />
+          <CardItem as="span" translateZ={50} className="block font-body text-lg text-ink">
+            {stampName(stamp, language)}
+          </CardItem>
+          <CardItem as="span" translateZ={60} className="mt-1 block text-sm text-ink-muted">
+            {stamp.description}
+          </CardItem>
+          <CardItem as="span" translateZ={100} className="mt-3 block w-full">
+            <StampImage stamp={stamp} />
+          </CardItem>
+          <span className="mt-4 flex items-center justify-between gap-2">
+            <CardItem
+              as="span"
+              translateZ={20}
+              className={cn('text-sm', out ? 'text-danger' : 'text-ink-muted')}
+            >
+              {out ? t('seal.out') : t('seal.left', { count: stamp.quantity })}
+            </CardItem>
+            {out ? null : (
+              <CardItem
+                as="span"
+                translateZ={20}
+                aria-hidden="true"
+                className={cn(
+                  'rounded-lg px-3 py-1 text-xs font-bold',
+                  checked ? 'bg-accent text-accent-ink' : 'border border-line text-ink',
+                )}
+              >
+                {checked ? t('seal.chosen') : t('seal.choose')}
+              </CardItem>
+            )}
+          </span>
+        </label>
+      </CardBody>
+    </CardContainer>
   )
 }
 
@@ -149,14 +197,15 @@ function StampOption({ stamp, language, checked, onSelect }: StampOptionProps) {
  */
 function StampImage({ stamp }: { stamp: Stamp }) {
   const [broken, setBroken] = useState(false)
+  const size = 'block h-32 w-full rounded-lg'
 
   if (stamp.image_url === null || broken) {
-    return <span className={styles.placeholder} aria-hidden="true" />
+    return <span className={cn(size, styles.placeholder)} aria-hidden="true" />
   }
 
   return (
     <img
-      className={styles.image}
+      className={cn(size, 'object-cover', styles.image)}
       src={stamp.image_url}
       alt=""
       loading="lazy"

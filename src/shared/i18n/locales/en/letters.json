@@ -62,6 +62,8 @@
     "left_one": "{{count}} left",
     "left_other": "{{count}} left",
     "out": "none left",
+    "choose": "Choose",
+    "chosen": "Chosen",
     "confirm": "Seal",
     "pending": "Sealing…"
   },

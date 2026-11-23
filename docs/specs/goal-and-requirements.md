@@ -75,7 +75,8 @@ tags:
 ## Технические заметки
 
 - React · TypeScript · Vite · React Router · TanStack Query · i18next · CSS-переменные и
-  CSS-модули · Vitest + Testing Library + MSW. Сборка — статический SPA, без SSR.
+  CSS-модули с плановым переходом на Tailwind v4 (+ компоненты shadcn) · Vitest + Testing
+  Library + MSW. Сборка — статический SPA, без SSR.
 - Контракт бэкенда зафиксирован отдельной спекой (`module-backend-contract`); его источник —
   документы монорепозитория, а не догадки клиента.
 - Что нужно от бэкенда до запуска клиента: настроить CORS и привести эндпоинты друзей к

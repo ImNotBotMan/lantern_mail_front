@@ -1,4 +1,17 @@
-:root {
+/*
+ * Токены оформления — единственный источник для CSS-модулей и для Tailwind.
+ *
+ * `@theme` делает каждую переменную ещё и утилитой: `--color-surface` → `bg-surface`,
+ * `text-surface`, `border-surface`; `--radius-md` → `rounded-md`; `--font-ui` → `font-ui`;
+ * `--text-lg` → `text-lg`. В CSS-модулях они по-прежнему читаются как `var(--color-surface)`.
+ * `static` — переменные попадают в CSS всегда, даже если ни одна утилита их не использует:
+ * CSS-модули Tailwind не сканирует.
+ *
+ * `--color-*: initial` выключает палитру Tailwind (`gray-50`, `emerald-500`…): цвет берётся
+ * только из токенов, а класс вроде `bg-gray-50` просто не сгенерируется — это сразу видно.
+ */
+@theme static {
+  --color-*: initial;
   --color-bg: #fbf7f0;
   --color-surface: #ffffff;
   --color-ink: #2b241c;
@@ -10,17 +23,26 @@
 
   --radius-sm: 6px;
   --radius-md: 10px;
+
+  --font-body: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+}
+
+/*
+ * Отступы — для CSS-модулей. В Tailwind шаг сетки 4px (`p-1` = 4px), и первые шаги
+ * совпадают: space-1…4 = `p-1`…`p-4`. Дальше расходятся: space-5 (24px) = `p-6`,
+ * space-6 (32px) = `p-8`.
+ */
+:root {
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-
-  --font-body: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
-  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.75rem;
 }

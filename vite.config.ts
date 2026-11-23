@@ -1,6 +1,8 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { fileURLToPath } from 'node:url'
 
 // Прокси убирает CORS в разработке: браузер видит один origin, а Vite переписывает
 // /api/* на бэкенд. Для прод-сборки адрес задаётся через VITE_API_BASE_URL.
@@ -9,7 +11,9 @@ import react from '@vitejs/plugin-react'
 const apiTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8000'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  // `@/` — корень `src`: так импортируют компоненты, которые ставит shadcn (components.json).
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     proxy: {
       '/api': {

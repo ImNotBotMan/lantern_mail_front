@@ -2,7 +2,8 @@
 
 Веб-клиент «медленной почты» Lantern Mail: письмо пишут, запечатывают и отправляют, а
 получатель видит, что оно «летит» к нему, но прочитать может только после доставки.
-React · TypeScript · Vite · React Router · TanStack Query · i18next · CSS-модули.
+React · TypeScript · Vite · React Router · TanStack Query · i18next · CSS-модули
+(в переходе на Tailwind v4 + shadcn).
 
 ## Запуск
 

@@ -53,6 +53,18 @@
     "unsavedLeave": "Leave without saving",
     "unsavedStay": "Stay"
   },
+  "seal": {
+    "title": "Choose a stamp",
+    "hint": "A stamp is optional — you can seal the letter without one.",
+    "legend": "Stamp",
+    "noStamp": "No stamp",
+    "noStampHint": "Seal without a stamp",
+    "left_one": "{{count}} left",
+    "left_other": "{{count}} left",
+    "out": "none left",
+    "confirm": "Seal",
+    "pending": "Sealing…"
+  },
   "status": {
     "draft": "Draft",
     "sealed": "Sealed",

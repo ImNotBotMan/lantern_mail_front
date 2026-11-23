@@ -190,6 +190,16 @@ export interface LetterSeal {
   stamp_id?: number | null
 }
 
+/** Марка каталога с остатком текущего пользователя (`GET /stamps`). */
+export interface Stamp {
+  id: number
+  name_ru: string
+  name_en: string
+  /** Пока `null` у всех видов: клиент рисует заглушку, а не битую картинку. */
+  image_url: string | null
+  quantity: number
+}
+
 export interface UserSearchResult {
   username: string
   relationship: Relationship
@@ -245,6 +255,8 @@ export type ApiErrorCode =
   | 'city_change_too_soon'
   | 'sender_city_missing'
   | 'recipient_city_missing'
+  | 'not_enough_stamps'
+  | 'stamp_not_found'
   | 'validation_error'
 
 /** Коды, которые порождает сам клиент: сервер их не присылает. */

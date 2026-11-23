@@ -26,6 +26,8 @@
   "sender_city_missing": "Choose your city in the profile first",
   "recipient_city_missing": "The recipient has not chosen a city yet",
   "validation_error": "Please check the entered data",
+  "not_enough_stamps": "That stamp ran out — pick another one or seal without a stamp",
+  "stamp_not_found": "No such stamp in the catalogue — refresh the list",
   "network_error": "No connection to the server",
   "server_error": "The server is not responding, try later",
   "unknown": "Something went wrong"

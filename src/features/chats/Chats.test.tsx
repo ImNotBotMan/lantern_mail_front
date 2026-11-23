@@ -11,6 +11,7 @@ import type {
   LetterCreate,
   LetterEvent,
   LetterResponse,
+  LetterSeal,
   LetterUpdate,
 } from '../../api/types'
 import {
@@ -25,11 +26,14 @@ import {
   readIncomingLetter,
   selfChat,
   transitLetter,
+  winterStamp,
 } from '../../test/msw/handlers'
 import { server } from '../../test/msw/server'
 import { renderAt } from '../../test/render'
 import { signInForTest } from '../../test/session'
+import i18n from '../../shared/i18n'
 import { t } from '../../test/i18n'
+import { stampName } from '../letters/stampName'
 
 const label = (key: string) => t(key, 'chats')
 
@@ -66,7 +70,13 @@ function feedServer(pages: Record<string, ConversationFeed>) {
  * отдавал запечатанные. `failSeal` / `failSend` — ответ 409 на соответствующий шаг.
  */
 function lettersServer() {
-  const state = { steps: [] as string[], failSeal: false, failSend: false }
+  const state = {
+    steps: [] as string[],
+    failSeal: false,
+    failSend: false,
+    /** Марки из тел запечатывания: `null` — «без марки». */
+    stampIds: [] as (number | null)[],
+  }
   const letters = new Map<string, LetterResponse>()
   let nextId = 1
 
@@ -92,8 +102,10 @@ function lettersServer() {
       letters.set(id, updated)
       return HttpResponse.json(updated)
     }),
-    http.post('*/api/letters/:id/seal', ({ params }) => {
+    http.post('*/api/letters/:id/seal', async ({ params, request }) => {
+      const data = (await request.json()) as LetterSeal
       state.steps.push('seal')
+      state.stampIds.push(data.stamp_id ?? null)
       if (state.failSeal) {
         return HttpResponse.json(
           { error: 'sender_city_missing', message: 'No city' },
@@ -138,6 +150,13 @@ async function renderChat(card: ConversationCard) {
 
 const composerField = () => screen.findByRole('textbox', { name: label('composer.label') })
 const sealButton = () => screen.getByRole('button', { name: label('composer.seal') })
+
+/** Композер запечатывает через выбор марки: по умолчанию «без марки» — сразу подтверждаем. */
+async function sealWithoutStamp() {
+  await userEvent.click(sealButton())
+  const dialog = within(await screen.findByRole('dialog', { name: t('seal.title', 'letters') }))
+  await userEvent.click(dialog.getByRole('button', { name: t('seal.confirm', 'letters') }))
+}
 const sealedBlock = () => screen.findByRole('region', { name: label('sealed.title') })
 
 describe('список чатов', () => {
@@ -295,7 +314,7 @@ describe('композер', () => {
 
     const field = await composerField()
     await userEvent.type(field, 'Как дела?')
-    await userEvent.click(sealButton())
+    await sealWithoutStamp()
 
     await waitFor(() => expect(field).toHaveValue(''))
     const sealed = within(await sealedBlock())
@@ -312,7 +331,7 @@ describe('композер', () => {
     await renderChat(annaChat)
 
     await userEvent.type(await composerField(), 'Как дела?')
-    await userEvent.click(sealButton())
+    await sealWithoutStamp()
     const sealed = within(await sealedBlock())
 
     await userEvent.click(sealed.getByRole('button', { name: label('sealed.send') }))
@@ -335,7 +354,7 @@ describe('композер', () => {
     await renderChat(annaChat)
 
     await userEvent.type(await composerField(), 'Привет')
-    await userEvent.click(sealButton())
+    await sealWithoutStamp()
     const sealed = within(await sealedBlock())
     await userEvent.click(sealed.getByRole('button', { name: label('sealed.send') }))
     await userEvent.click(sealed.getByRole('button', { name: label('sealed.confirmYes') }))
@@ -351,14 +370,14 @@ describe('композер', () => {
 
     expect(await screen.findByRole('heading', { name: label('chat.self') })).toBeInTheDocument()
     await userEvent.type(await composerField(), 'Себе в будущее')
-    await userEvent.click(sealButton())
+    await sealWithoutStamp()
 
     const expected = [`create:${me.username ?? ''}:Себе в будущее`, 'seal']
     await waitFor(() => expect(state.steps).toEqual(expected))
     expect(await sealedBlock()).toBeInTheDocument()
   })
 
-  it('ошибку показывает в композере, а повтор продолжает тот же черновик', async () => {
+  it('ошибку запечатывания показывает в диалоге, а повтор продолжает тот же черновик', async () => {
     const state = lettersServer()
     state.failSeal = true
     feedServer({ '': feedOf(annaChat) })
@@ -367,20 +386,41 @@ describe('композер', () => {
     const field = await composerField()
     await userEvent.type(field, 'Привет')
     await userEvent.click(sealButton())
+    const dialog = within(await screen.findByRole('dialog', { name: t('seal.title', 'letters') }))
+    await userEvent.click(dialog.getByRole('button', { name: t('seal.confirm', 'letters') }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(t('sender_city_missing', 'errors'))
+    expect(await dialog.findByRole('alert')).toHaveTextContent(t('sender_city_missing', 'errors'))
     expect(field).toHaveValue('Привет')
 
+    // Диалог закрывают, текст правят и запечатывают снова — продолжается тот же черновик.
+    await userEvent.click(dialog.getByRole('button', { name: t('actions.cancel', 'common') }))
     state.failSeal = false
     await userEvent.type(field, '!')
-    await userEvent.click(sealButton())
+    await sealWithoutStamp()
 
     const expected = ['create:anna:Привет', 'seal', 'update:Привет!', 'seal']
     await waitFor(() => expect(state.steps).toEqual(expected))
     await waitFor(() => expect(field).toHaveValue(''))
   })
 
-  it('повторный клик во время запечатывания второго письма не создаёт', async () => {
+  it('выбранная марка уходит в запрос запечатывания из композера', async () => {
+    const state = lettersServer()
+    feedServer({ '': feedOf(annaChat) })
+    await renderChat(annaChat)
+
+    await userEvent.type(await composerField(), 'С маркой')
+    await userEvent.click(sealButton())
+    const dialog = within(await screen.findByRole('dialog', { name: t('seal.title', 'letters') }))
+    await userEvent.click(
+      dialog.getByRole('radio', { name: new RegExp(stampName(winterStamp, i18n.language)) }),
+    )
+    await userEvent.click(dialog.getByRole('button', { name: t('seal.confirm', 'letters') }))
+
+    await waitFor(() => expect(state.stampIds).toEqual([winterStamp.id]))
+    expect(await sealedBlock()).toBeInTheDocument()
+  })
+
+  it('повторный клик по подтверждению во время запечатывания не создаёт второе письмо', async () => {
     const state = lettersServer()
     const gate = { open: () => {} }
     const opened = new Promise<void>((resolve) => {
@@ -399,7 +439,10 @@ describe('композер', () => {
 
     await userEvent.type(await composerField(), 'Один раз')
     await userEvent.click(sealButton())
-    const sealing = await screen.findByRole('button', { name: label('composer.sealing') })
+    const dialog = within(await screen.findByRole('dialog', { name: t('seal.title', 'letters') }))
+    await userEvent.click(dialog.getByRole('button', { name: t('seal.confirm', 'letters') }))
+
+    const sealing = await dialog.findByRole('button', { name: t('seal.pending', 'letters') })
     expect(sealing).toBeDisabled()
     await userEvent.click(sealing)
     gate.open()

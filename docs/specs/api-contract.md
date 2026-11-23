@@ -43,6 +43,12 @@ tags: [contract, api]
 у летящего; `conversation_id` обязателен у всех трёх событий (README-абзац про `null`
 у `letter.read` из контракта убран); живой сокет не закрывается при истечении токена.
 
+Каталог марок и запечатывание с маркой выкачены в `main` монорепо (PR #8): `GET /stamps`,
+`stamp_id` в теле `/seal`, одноразовое списание при запечатывании и возврат при распечатке.
+Формы и коды сверены с `backend/app/api/stamps.py`, `backend/app/schemas/stamps.py` и
+`backend/app/services/letters.py`; `description` в ответе пока нет — поле появится отдельно,
+клиент на него не рассчитывает.
+
 Города требуют ревизии Alembic `c9e4f7a12b58` (`uv run alembic upgrade head`): без неё
 `/cities` и `PATCH /users/me` отвечают 500, а письма — 500 вместо отправки.
 
@@ -170,8 +176,26 @@ sender_city | null, recipient_city | null }`.
 сервером на момент ответа; клиент его не считает. `deliver_at` получателю не отдаётся —
 в конверте нет и не должно быть времени доставки.
 
-`postcard_id` / `seal_id` / `stamp_id` — идентификаторы ещё не созданного каталога
-обёрток; сервер их не проверяет, каталога в первом билде нет.
+`postcard_id` / `seal_id` — идентификаторы ещё не созданного каталога печатей и открыток:
+сервер их не проверяет, каталога нет. `stamp_id` — марка из каталога, и её сервер проверяет:
+не из каталога — 422 `stamp_not_found`, остаток нулевой — 409 `not_enough_stamps`.
+Марка одноразовая: успешное запечатывание списывает одну штуку, `unseal` возвращает её
+(как и удаление запечатанного письма и отмена летящего).
+
+### Марки
+
+| Метод и путь | Тело запроса | Успех |
+|---|---|---|
+| `GET /stamps` | — | 200 `Stamp[]` |
+
+```
+Stamp  { id, name_ru, name_en, image_url | null, quantity }
+```
+
+Отдаётся **весь каталог** сразу с остатками текущего пользователя: каталог общий, остатки
+личные. Виды с `quantity: 0` тоже в ответе — прятать их или помечать «закончилось» решает
+клиент. `image_url` сейчас `null` у всех видов (заглушка — дело клиента); `description`
+в контракте пока нет. Пополнения, кроме стартового набора, API не предлагает.
 
 ### Чаты
 
@@ -269,8 +293,8 @@ UserSearchResult        { username, relationship, request_id | null }
 | 401 | `not_authenticated`, `invalid_credentials`, `invalid_refresh_token`, `invalid_token` |
 | 403 | `forbidden`, `email_not_verified` |
 | 404 | `not_found`, `user_not_found`, `friend_request_not_found` |
-| 409 | `email_taken`, `email_registered`, `username_taken`, `username_already_set`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing` |
-| 422 | `recipient_not_found`, `friend_request_to_self`, `city_not_found`, `validation_error` (с `details`) |
+| 409 | `email_taken`, `email_registered`, `username_taken`, `username_already_set`, `not_friends`, `already_friends`, `friend_request_exists`, `incoming_friend_request_exists`, `friend_request_not_pending`, `invalid_state`, `letter_empty`, `recipient_missing`, `city_change_too_soon`, `sender_city_missing`, `recipient_city_missing`, `not_enough_stamps` |
+| 422 | `recipient_not_found`, `friend_request_to_self`, `city_not_found`, `stamp_not_found`, `validation_error` (с `details`) |
 | 502 | `identity_unavailable` — Firebase недоступен (вход, регистрация, сброс пароля) |
 
 `invalid_refresh_token` на `/auth/refresh` означает, что сессия закрыта (истекла или
@@ -293,4 +317,8 @@ UserSearchResult        { username, relationship, request_id | null }
 - Смена города — не чаще раза в неделю от `city_changed_at`; повторная отправка того же
   города — успех без изменения даты. Нарушение — 409 `city_change_too_soon`; клиент показывает лимит
   заранее, но ответ сервера всё равно показывает.
-- Какой город назвать на языке интерфейса, клиент решает сам: справочник отдаёт обе колонки.
+- Хватает ли марок: `quantity` в каталоге — подсказка для выбора, а решает сервер
+  (409 `not_enough_stamps`, 422 `stamp_not_found`). Остаток мог измениться между открытием
+  диалога и подтверждением, поэтому клиент показывает отказ, а не считает сам.
+- Какой город или марку назвать на языке интерфейса, клиент решает сам: справочник отдаёт
+  обе колонки.

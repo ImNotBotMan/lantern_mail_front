@@ -28,9 +28,10 @@ tags: [frontend, network]
 - **`client.ts`** — `request(method, path, {body, form, auth})`: собирает URL, ставит
   `Authorization`, разбирает ответ, бросает `ApiError`.
 - **`types.ts`** — формы контракта: `TokenResponse`, `LetterResponse`, `IncomingLetter`,
-  `IncomingLetterPreview`, `UserSearchResult`, `Friend`, `FriendRequest*`, `UserResponse`, коды
-  ошибок. Единственное место, где эти формы описаны.
-- **`endpoints/`** — по файлу на область: `auth`, `letters`, `friends`, `users`.
+  `IncomingLetterPreview`, `Stamp`, `UserSearchResult`, `Friend`, `FriendRequest*`, `UserResponse`,
+  `City`, `Country`, формы чатов, коды ошибок. Единственное место, где эти формы описаны.
+- **`endpoints/`** — по файлу на область: `auth`, `letters`, `stamps`, `friends`, `users`,
+  `cities`, `countries`, `conversations`.
 - **`errors.ts`** — `ApiError` и разбор тела ошибки.
 
 ## Ключевые правила
@@ -50,6 +51,9 @@ tags: [frontend, network]
   `localStorage`: так `api-client` не зависит от `module-front-session` и цикла нет.
 - **Логин — форма, остальное — JSON.** `/auth/login` отправляется `application/x-www-form-urlencoded`
   (`username` = email), это исключение из общего правила JSON.
+- **Необязательное поле не отправляется.** Тело собирается из того, что реально выбрано:
+  `lettersApi.seal(id, { stamp_id })` с `undefined` даёт пустое тело, и «без марки» — это
+  запечатывание без поля, а не `stamp_id: null`.
 - **Запросы авторизации не несут токен.** Вход, регистрация и сброс пароля идут без
   `Authorization` и помечены `isAuthRequest`: на их 401 клиент не запускает refresh и не
   повторяет запрос.

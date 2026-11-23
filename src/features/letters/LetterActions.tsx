@@ -7,6 +7,7 @@ import { errorMessage } from '../../shared/i18n/apiError'
 import { Button, LinkButton } from '../../shared/ui'
 import styles from './letters.module.css'
 import { lettersPaths } from './paths'
+import { SealLetterDialog } from './SealLetterDialog'
 import { useDeleteLetter, useSealLetter, useSendLetter, useUnsealLetter } from './useLetterActions'
 
 type Pending = 'send' | 'delete' | null
@@ -32,6 +33,7 @@ export function LetterActions({ letter, scope = 'letter' }: LetterActionsProps) 
 
   const [pending, setPending] = useState<Pending>(null)
   const [error, setError] = useState<unknown>(null)
+  const [sealing, setSealing] = useState(false)
   const busy = seal.isPending || unseal.isPending || send.isPending || remove.isPending
 
   const canEdit = letter.status === 'draft' && scope === 'letter'
@@ -105,7 +107,10 @@ export function LetterActions({ letter, scope = 'letter' }: LetterActionsProps) 
       {canSeal ? (
         <Button
           variant="secondary"
-          onClick={() => void act(() => seal.mutateAsync(letter.id))}
+          onClick={() => {
+            setError(null)
+            setSealing(true)
+          }}
           disabled={busy}
         >
           {t('editor.seal')}
@@ -139,6 +144,15 @@ export function LetterActions({ letter, scope = 'letter' }: LetterActionsProps) 
         <p className={styles.error} role="alert">
           {errorMessage(error)}
         </p>
+      ) : null}
+      {sealing ? (
+        <SealLetterDialog
+          onSeal={async (stampId) => {
+            await seal.mutateAsync({ id: letter.id, stampId })
+            setSealing(false)
+          }}
+          onClose={() => setSealing(false)}
+        />
       ) : null}
     </div>
   )

@@ -28,6 +28,8 @@ export interface LetterResponse {
   sent_at: string | null
   deliver_at: string | null
   read_at: string | null
+  /** Когда марка письма перешла в коллекцию получателя; null — марки нет, письмо себе или ещё не доставлено. */
+  stamp_transferred_at: string | null
 }
 
 /** Письмо в пути глазами получателя: отправитель и обёртка, без текста и времени доставки. */
@@ -53,6 +55,8 @@ export interface IncomingLetter {
   recipient_city: City | null
   delivered_at: string
   read_at: string | null
+  /** Марка этого письма уже в коллекции получателя; null — марки не было. */
+  stamp_transferred_at: string | null
 }
 
 export type AnyLetter = LetterResponse | IncomingLetter | IncomingLetterPreview
@@ -195,6 +199,8 @@ export interface Stamp {
   id: number
   name_ru: string
   name_en: string
+  /** Короткое описание вида (пара предложений); одно, на русском — перевода в каталоге нет. */
+  description: string
   /** Пока `null` у всех видов: клиент рисует заглушку, а не битую картинку. */
   image_url: string | null
   quantity: number

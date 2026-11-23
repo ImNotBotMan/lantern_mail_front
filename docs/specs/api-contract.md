@@ -46,8 +46,13 @@ tags: [contract, api]
 Каталог марок и запечатывание с маркой выкачены в `main` монорепо (PR #8): `GET /stamps`,
 `stamp_id` в теле `/seal`, одноразовое списание при запечатывании и возврат при распечатке.
 Формы и коды сверены с `backend/app/api/stamps.py`, `backend/app/schemas/stamps.py` и
-`backend/app/services/letters.py`; `description` в ответе пока нет — поле появится отдельно,
-клиент на него не рассчитывает.
+`backend/app/services/letters.py`.
+
+Ветка бэкенда `feat-letter-stamps` (ещё не в `main`) добавляет `description` в `Stamp`,
+`stamp_transferred_at` в `LetterResponse` и `IncomingLetter` (переход марки получателю при
+доставке) и урезает стартовый набор до 1 штуки каждого вида. Ей нужны ревизии Alembic
+`b6e91f04a2c8` и `9d4c1b7a03f5` (`uv run alembic upgrade head`): без них `GET /stamps` и все
+ответы с письмами — 500.
 
 Города требуют ревизии Alembic `c9e4f7a12b58` (`uv run alembic upgrade head`): без неё
 `/cities` и `PATCH /users/me` отвечают 500, а письма — 500 вместо отправки.
@@ -161,9 +166,9 @@ IncomingLetter            view: "incoming"          — status: "delivered" | "r
 ```
 
 `LetterResponse`: `{ view, id, status, recipient_username | null, body, wrapper, sender_city | null,
-recipient_city | null, created_at, sealed_at | null, sent_at | null, deliver_at | null, read_at | null }`.
+recipient_city | null, created_at, sealed_at | null, sent_at | null, deliver_at | null, read_at | null, stamp_transferred_at | null }`.
 `IncomingLetter`: `{ view, id, status, sender_username | null, body, wrapper, sender_city | null,
-recipient_city | null, delivered_at, read_at | null }`.
+recipient_city | null, delivered_at, read_at | null, stamp_transferred_at | null }`.
 `IncomingLetterPreview`: `{ view, id, status: "in_transit", sender_username | null, wrapper,
 sender_city | null, recipient_city | null }`.
 
@@ -182,6 +187,11 @@ sender_city | null, recipient_city | null }`.
 Марка одноразовая: успешное запечатывание списывает одну штуку, `unseal` возвращает её
 (как и удаление запечатанного письма и отмена летящего).
 
+`stamp_transferred_at` — когда марка доставленного письма ушла в коллекцию получателя (+1 в его
+`GET /stamps`); на письме марка остаётся видна. `null` — марки не было, письмо самому себе или
+доставки ещё не было. В `IncomingLetterPreview` поля нет. Марок в системе от этого не
+становится больше: штука списана у отправителя при запечатывании.
+
 ### Марки
 
 | Метод и путь | Тело запроса | Успех |
@@ -189,13 +199,15 @@ sender_city | null, recipient_city | null }`.
 | `GET /stamps` | — | 200 `Stamp[]` |
 
 ```
-Stamp  { id, name_ru, name_en, image_url | null, quantity }
+Stamp  { id, name_ru, name_en, description, image_url | null, quantity }
 ```
 
 Отдаётся **весь каталог** сразу с остатками текущего пользователя: каталог общий, остатки
 личные. Виды с `quantity: 0` тоже в ответе — прятать их или помечать «закончилось» решает
-клиент. `image_url` сейчас `null` у всех видов (заглушка — дело клиента); `description`
-в контракте пока нет. Пополнения, кроме стартового набора, API не предлагает.
+клиент. `image_url` сейчас `null` у всех видов (заглушка — дело клиента). `description` —
+короткое описание вида (пара предложений), одно, без перевода: колонки `_ru`/`_en` у него нет.
+Стартовый набор — 1 штука каждого вида; пополняется коллекция только марками доставленных
+писем от других (`stamp_transferred_at`), отдельного пополнения API не предлагает.
 
 ### Чаты
 

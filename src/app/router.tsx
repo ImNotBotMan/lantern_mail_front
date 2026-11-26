@@ -8,6 +8,7 @@ import { AccountPage } from '../pages/AccountPage'
 import { ChatPage } from '../pages/ChatPage'
 import { ChatsPage } from '../pages/ChatsPage'
 import { CityPage } from '../pages/CityPage'
+import { CollectionPage } from '../pages/CollectionPage'
 import { FriendsPage } from '../pages/FriendsPage'
 import { InboxPage } from '../pages/InboxPage'
 import { LetterEditorPage } from '../pages/LetterEditorPage'
@@ -49,6 +50,7 @@ export const routes: RouteObject[] = [
               { path: 'chats', element: <ChatsPage /> },
               { path: 'chats/:id', element: <ChatPage /> },
               { path: 'friends', element: <FriendsPage /> },
+              { path: 'collection', element: <CollectionPage /> },
               { path: 'account', element: <AccountPage /> },
               { path: 'letters/new', element: <LetterEditorPage /> },
               { path: 'letters/:id', element: <LetterPage /> },

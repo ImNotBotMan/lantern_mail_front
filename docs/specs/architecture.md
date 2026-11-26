@@ -83,9 +83,9 @@ src/
 5. **Формы контракта — в одном месте.** Типы ответов и запросов описаны в `src/api/types.ts`
    по `module-backend-contract`; экраны не разбирают JSON вручную и не объявляют свои формы.
 6. **Ни одной строки в разметке.** Все тексты — из словарей `module-front-i18n-ui`.
-7. **URL — состояние экрана.** Списки, письма и диалоги адресуемы: `/inbox`, `/sent`,
-   `/letters/:id`, `/chats`, `/chats/:id`, `/friends`, `/account`, `/login`, `/register`,
-   `/forgot-password`.
+7. **URL — состояние экрана.** Списки, письма, диалоги и коллекция адресуемы: `/inbox`,
+   `/sent`, `/letters/:id`, `/chats`, `/chats/:id`, `/friends`, `/collection`, `/account`,
+   `/login`, `/register`, `/forgot-password`.
 
 ## Решения
 

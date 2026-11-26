@@ -74,5 +74,9 @@
     "delivered": "Delivered",
     "read": "Read",
     "cancelled": "Cancelled"
+  },
+  "collection": {
+    "title": "Stamp collection",
+    "empty": "The catalogue is empty — stamps will appear with an update"
   }
 }

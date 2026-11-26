@@ -17,7 +17,7 @@ tags: [frontend, architecture]
 ## Стек
 
 React · TypeScript · Vite · React Router · TanStack Query · i18next · CSS-переменные и
-CSS-модули · Vitest + Testing Library + MSW для компонентных тестов · Playwright против
+CSS-модули, в переходе на Tailwind v4 (см. «Стили») · Vitest + Testing Library + MSW для компонентных тестов · Playwright против
 живого бэкенда для сценариев сессии. Сборка — статический бандл, без SSR.
 
 ## Топология и границы
@@ -46,6 +46,11 @@ src/
 - **`module-front-letters`** — экраны писем и действия жизненного цикла, включая выбор марки
   из личной коллекции (`/stamps`) при запечатывании: каталог нужен только этому действию,
   поэтому отдельного модуля марок нет.
+- **Стили** — в будущем проект целиком переходит на Tailwind v4; CSS-модули — уходящий
+  способ. Сейчас переходное состояние: экраны на CSS-модулях и токенах `tokens.css`, Tailwind
+  подключён только темой и утилитами, без preflight, и на нём стоят компоненты shadcn
+  в `src/components/ui` (`components.json`, алиас `@/`, склейка классов — `cn` из `src/lib/utils`).
+  Правила перехода — в `module-front-i18n-ui`, раздел «Стили и переход на Tailwind».
 - **`module-front-chats`** — чаты: список диалогов, лента диалога, ответ в чате и realtime-канал
   (WebSocket поверх шины событий бэкенда).
 - **`module-front-city`** — справочник городов, выбор и смена города, путь письма.
@@ -78,9 +83,9 @@ src/
 5. **Формы контракта — в одном месте.** Типы ответов и запросов описаны в `src/api/types.ts`
    по `module-backend-contract`; экраны не разбирают JSON вручную и не объявляют свои формы.
 6. **Ни одной строки в разметке.** Все тексты — из словарей `module-front-i18n-ui`.
-7. **URL — состояние экрана.** Списки, письма и диалоги адресуемы: `/inbox`, `/sent`,
-   `/letters/:id`, `/chats`, `/chats/:id`, `/friends`, `/account`, `/login`, `/register`,
-   `/forgot-password`.
+7. **URL — состояние экрана.** Списки, письма, диалоги и коллекция адресуемы: `/inbox`,
+   `/sent`, `/letters/:id`, `/chats`, `/chats/:id`, `/friends`, `/collection`, `/account`,
+   `/login`, `/register`, `/forgot-password`.
 
 ## Решения
 

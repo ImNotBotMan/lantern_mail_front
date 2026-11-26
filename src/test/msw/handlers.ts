@@ -83,6 +83,7 @@ export const letter: LetterResponse = {
   sent_at: null,
   deliver_at: null,
   read_at: null,
+  stamp_transferred_at: null,
 }
 
 export const sealedLetter: LetterResponse = {
@@ -126,6 +127,7 @@ export const incomingLetter: IncomingLetter = {
   recipient_city: petersburg,
   delivered_at: '2026-01-05T12:00:00Z',
   read_at: null,
+  stamp_transferred_at: null,
 }
 
 /** Доставленное письмо, которое уже прочитали. */
@@ -143,6 +145,7 @@ export const winterStamp: Stamp = {
   id: 1,
   name_ru: 'Первая зимняя',
   name_en: 'First winter',
+  description: 'Свет в темноте долгих писем.',
   image_url: null,
   quantity: 4,
 }
@@ -152,6 +155,7 @@ export const doveStamp: Stamp = {
   id: 2,
   name_ru: 'Голубь',
   name_en: 'Dove',
+  description: 'Проверенный курьер на ближние расстояния.',
   image_url: null,
   quantity: 0,
 }

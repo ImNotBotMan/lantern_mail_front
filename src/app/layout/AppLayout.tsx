@@ -37,6 +37,9 @@ export function AppLayout() {
           <NavLink to="/friends" className={navClass}>
             {t('nav.friends')}
           </NavLink>
+          <NavLink to="/collection" className={navClass}>
+            {t('nav.collection')}
+          </NavLink>
           <NavLink to="/account" className={navClass}>
             {t('nav.account')}
           </NavLink>

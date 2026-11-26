@@ -5,6 +5,7 @@ import type { IncomingLetter, LetterResponse } from '../../api'
 import { CityPath } from './CityPath'
 import { letterDates } from './dates'
 import styles from './letters.module.css'
+import { StampMark } from './StampMark'
 import { StatusBadge } from './StatusBadge'
 
 type Letter = LetterResponse | IncomingLetter
@@ -23,26 +24,32 @@ export function LetterView({ letter }: { letter: Letter }) {
       : t('letter.from', { username: letter.sender_username ?? t('letter.unknownSender') })
 
   return (
+    // Марка занимает правый столбец, текст письма — левый; на узком экране карточка
+    // переносится вниз. Без марки раскладка не меняется: элемент просто не рисуется.
     <article className={styles.letter}>
-      <header className={styles.letterHeader}>
-        <span className={styles.party}>{party}</span>
-        <StatusBadge status={letter.status} />
-      </header>
+      <div className={styles.letterMain}>
+        <header className={styles.letterHeader}>
+          <span className={styles.party}>{party}</span>
+          <StatusBadge status={letter.status} />
+        </header>
 
-      <CityPath senderCity={letter.sender_city} recipientCity={letter.recipient_city} />
+        <CityPath senderCity={letter.sender_city} recipientCity={letter.recipient_city} />
 
-      {dates.length > 0 ? (
-        <dl className={styles.dates}>
-          {dates.map((row) => (
-            <Fragment key={row.label}>
-              <dt>{row.label}</dt>
-              <dd>{row.value}</dd>
-            </Fragment>
-          ))}
-        </dl>
-      ) : null}
+        {dates.length > 0 ? (
+          <dl className={styles.dates}>
+            {dates.map((row) => (
+              <Fragment key={row.label}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        ) : null}
 
-      <p className={styles.body}>{letter.body}</p>
+        <p className={styles.body}>{letter.body}</p>
+      </div>
+
+      <StampMark letter={letter} />
     </article>
   )
 }

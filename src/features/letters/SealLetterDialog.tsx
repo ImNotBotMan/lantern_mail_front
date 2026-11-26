@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { Stamp } from '../../api'
+import { cn } from '@/lib/utils'
+
 import { errorMessage } from '../../shared/i18n/apiError'
 import { Button, Dialog, ErrorState, Spinner } from '../../shared/ui'
 import styles from './SealLetterDialog.module.css'
-import { stampName } from './stampName'
+import { StampCard } from './StampCard'
 import { useStamps } from './useStamps'
 
-/** Классы строки выбора: активная подсвечена, вид без остатка приглушён. */
-function optionClass(active: boolean, out = false): string {
-  return [styles.option, active ? styles.optionActive : '', out ? styles.out : '']
-    .filter(Boolean)
-    .join(' ')
+/** Классы строки «без марки»: активная подсвечена. */
+function optionClass(active: boolean): string {
+  return cn(styles.option, active && styles.optionActive)
 }
 
 interface SealLetterDialogProps {
@@ -91,7 +90,7 @@ export function SealLetterDialog({ onSeal, onClose }: SealLetterDialogProps) {
         ) : null}
 
         {stamps.data?.map((stamp) => (
-          <StampOption
+          <StampCard
             key={stamp.id}
             stamp={stamp}
             language={i18n.language}
@@ -107,60 +106,5 @@ export function SealLetterDialog({ onSeal, onClose }: SealLetterDialogProps) {
         </p>
       ) : null}
     </Dialog>
-  )
-}
-
-interface StampOptionProps {
-  stamp: Stamp
-  language: string
-  checked: boolean
-  onSelect: () => void
-}
-
-/** Вид с нулевым остатком виден, но не выбирается: «закончилось» — подсказка, а не запрет. */
-function StampOption({ stamp, language, checked, onSelect }: StampOptionProps) {
-  const { t } = useTranslation('letters')
-  const out = stamp.quantity === 0
-
-  return (
-    <label className={optionClass(checked, out)}>
-      <input
-        type="radio"
-        name="stamp"
-        className={styles.input}
-        checked={checked}
-        disabled={out}
-        onChange={onSelect}
-      />
-      <StampImage stamp={stamp} />
-      <span className={styles.optionMain}>
-        <span className={styles.optionName}>{stampName(stamp, language)}</span>
-        <span className={out ? styles.optionMetaOut : styles.optionMeta}>
-          {out ? t('seal.out') : t('seal.left', { count: stamp.quantity })}
-        </span>
-      </span>
-    </label>
-  )
-}
-
-/**
- * Картинка марки: пока `image_url` пуст у всех видов, рисуется заглушка; ошибившаяся
- * загрузка тоже уступает место заглушке, чтобы битой иконки не было никогда.
- */
-function StampImage({ stamp }: { stamp: Stamp }) {
-  const [broken, setBroken] = useState(false)
-
-  if (stamp.image_url === null || broken) {
-    return <span className={styles.placeholder} aria-hidden="true" />
-  }
-
-  return (
-    <img
-      className={styles.image}
-      src={stamp.image_url}
-      alt=""
-      loading="lazy"
-      onError={() => setBroken(true)}
-    />
   )
 }

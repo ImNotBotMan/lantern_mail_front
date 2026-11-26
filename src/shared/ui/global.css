@@ -1,3 +1,11 @@
+/*
+ * Tailwind — только тема и утилиты, без preflight: базовые стили проекта задаёт этот файл,
+ * а сброс Tailwind поменял бы вид всех существующих экранов. Токены проекта — в tokens.css
+ * (`@theme`): они заменяют одноимённые токены Tailwind и выключают его палитру.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
 @import './tokens.css';
 
 *,

@@ -17,7 +17,9 @@
     "unknownSender": "unknown sender",
     "missing": "No such letter: it may have been deleted or the link is stale",
     "path": "{{from}} → {{to}}",
-    "inTransitHint": "The letter is on its way. The recipient will see it only after delivery — a surprise kept."
+    "inTransitHint": "The letter is on its way. The recipient will see it only after delivery — a surprise kept.",
+    "stamp": "Stamp",
+    "stampOf": "Stamp: {{name}}"
   },
   "when": {
     "line": "{{label}}: {{date}}",
@@ -62,6 +64,8 @@
     "left_one": "{{count}} left",
     "left_other": "{{count}} left",
     "out": "none left",
+    "choose": "Choose",
+    "chosen": "Chosen",
     "confirm": "Seal",
     "pending": "Sealing…"
   },
@@ -72,5 +76,9 @@
     "delivered": "Delivered",
     "read": "Read",
     "cancelled": "Cancelled"
+  },
+  "collection": {
+    "title": "Stamp collection",
+    "empty": "The catalogue is empty — stamps will appear with an update"
   }
 }

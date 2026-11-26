@@ -14,6 +14,11 @@ interface DialogProps {
   busy?: boolean
   children: ReactNode
   footer?: ReactNode
+  /**
+   * Без шапки и крестика: заголовок остаётся только для скринридера. Закрытие — Esc
+   * или клик по затемнению (крупный план марки — контенту внутри не нужен интерфейс).
+   */
+  plain?: boolean
 }
 
 /**
@@ -22,7 +27,14 @@ interface DialogProps {
  * тестом. Фокус входит в элемент с `data-autofocus` (или в сам диалог), `Tab` ходит по
  * кругу, `Esc` закрывает, после закрытия фокус возвращается туда, откуда диалог открыли.
  */
-export function Dialog({ title, onClose, busy = false, children, footer }: DialogProps) {
+export function Dialog({
+  title,
+  onClose,
+  busy = false,
+  children,
+  footer,
+  plain = false,
+}: DialogProps) {
   const { t } = useTranslation()
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -93,20 +105,26 @@ export function Dialog({ title, onClose, busy = false, children, footer }: Dialo
         tabIndex={-1}
         onKeyDown={onKeyDown}
       >
-        <div className={styles.head}>
-          <h2 id={titleId} className={styles.title}>
+        {plain ? (
+          <h2 id={titleId} className={styles.visuallyHidden}>
             {title}
           </h2>
-          <button
-            type="button"
-            className={styles.close}
-            aria-label={t('actions.close')}
-            disabled={busy}
-            onClick={close}
-          >
-            ×
-          </button>
-        </div>
+        ) : (
+          <div className={styles.head}>
+            <h2 id={titleId} className={styles.title}>
+              {title}
+            </h2>
+            <button
+              type="button"
+              className={styles.close}
+              aria-label={t('actions.close')}
+              disabled={busy}
+              onClick={close}
+            >
+              ×
+            </button>
+          </div>
+        )}
         <div className={styles.content}>{children}</div>
         {footer ? <div className={styles.footer}>{footer}</div> : null}
       </div>

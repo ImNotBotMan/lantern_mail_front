@@ -5,6 +5,7 @@ import type { IncomingLetter, LetterResponse } from '../../api'
 import { CityPath } from './CityPath'
 import { letterDates } from './dates'
 import styles from './letters.module.css'
+import { StampMark } from './StampMark'
 import { StatusBadge } from './StatusBadge'
 
 type Letter = LetterResponse | IncomingLetter
@@ -28,6 +29,8 @@ export function LetterView({ letter }: { letter: Letter }) {
         <span className={styles.party}>{party}</span>
         <StatusBadge status={letter.status} />
       </header>
+
+      <StampMark letter={letter} />
 
       <CityPath senderCity={letter.sender_city} recipientCity={letter.recipient_city} />
 

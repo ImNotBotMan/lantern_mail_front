@@ -88,7 +88,9 @@ describe('выбор марки при запечатывании', () => {
 
     await waitFor(() => expect(state.bodies).toEqual([{ stamp_id: winterStamp.id }]))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    await waitFor(() => expect(state.stampRequests).toBe(2))
+    // Три запроса: страница (марка на письме), открытие диалога (свежие остатки) и
+    // перезапрос после списания марки.
+    await waitFor(() => expect(state.stampRequests).toBe(3))
     expect(await screen.findAllByText(label('status.sealed'))).not.toHaveLength(0)
     expect(screen.queryByRole('button', { name: label('editor.seal') })).toBeNull()
   })

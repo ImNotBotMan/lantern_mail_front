@@ -12,11 +12,13 @@ import {
   readIncomingLetter,
   sealedLetter,
   transitLetter,
+  winterStamp,
 } from '../../test/msw/handlers'
 import { server } from '../../test/msw/server'
 import { renderAt } from '../../test/render'
 import { signInForTest } from '../../test/session'
 import { t } from '../../test/i18n'
+import { stampName } from './stampName'
 
 const label = (key: string) => t(key, 'letters')
 
@@ -171,5 +173,66 @@ describe('экран письма', () => {
     const letter = await findLetterArticle()
     expect(letter.getByText(label('letter.inTransitHint'))).toBeInTheDocument()
     expect(reads).toEqual([])
+  })
+})
+
+describe('марка на письме', () => {
+  /** Письмо с маркой id 1 («Первая зимняя») и без марок печатей/открыток. */
+  const stamped = (base: AnyLetter): AnyLetter => ({
+    ...base,
+    wrapper: { postcard_id: null, seal_id: null, stamp_id: winterStamp.id },
+  })
+
+  it('доставленное письмо показывает марку, она открывается крупным планом', async () => {
+    singleLetterServer(stamped(incomingLetter))
+    await renderLetter(incomingLetter.id)
+
+    const letter = await findLetterArticle()
+    const mark = await letter.findByRole('button', {
+      name: i18n.t('letter.stampOf', {
+        ns: 'letters',
+        name: stampName(winterStamp, i18n.language),
+      }),
+    })
+    expect(letter.getByText(stampName(winterStamp, i18n.language))).toBeInTheDocument()
+
+    await userEvent.click(mark)
+    await screen.findByRole('dialog', { name: stampName(winterStamp, i18n.language) })
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mark).toHaveFocus()
+  })
+
+  it('отправитель видит на своём письме марку, которую клеил', async () => {
+    singleLetterServer(stamped(transitLetter))
+    await renderLetter(transitLetter.id)
+
+    const letter = await findLetterArticle()
+    expect(await letter.findByText(stampName(winterStamp, i18n.language))).toBeInTheDocument()
+  })
+
+  it('конверт в пути марку не показывает, даже если она в ответе', async () => {
+    singleLetterServer(stamped(envelope))
+    await renderLetter(envelope.id)
+
+    const letter = await findLetterArticle()
+    await letter.findByText(i18n.t('letter.from', { ns: 'letters', username: 'boris' }))
+    expect(screen.queryByRole('button', { name: label('letter.stamp') })).toBeNull()
+    expect(letter.queryByText(stampName(winterStamp, i18n.language))).toBeNull()
+  })
+
+  it('неизвестный каталогу id — заглушка без названия', async () => {
+    singleLetterServer({
+      ...incomingLetter,
+      wrapper: { postcard_id: null, seal_id: null, stamp_id: 999 },
+    })
+    await renderLetter(incomingLetter.id)
+
+    const letter = await findLetterArticle()
+    const mark = await letter.findByRole('button', { name: label('letter.stamp') })
+    expect(letter.queryByText(stampName(winterStamp, i18n.language))).toBeNull()
+
+    await userEvent.click(mark)
+    await screen.findByRole('dialog', { name: label('letter.stamp') })
   })
 })

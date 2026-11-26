@@ -1,26 +1,26 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { cn } from '@/lib/utils'
-
 import type { IncomingLetter, LetterResponse } from '../../api'
 import { Dialog } from '../../shared/ui'
 import styles from './letters.module.css'
+import { StampCard } from './StampCard'
 import { stampName } from './stampName'
 import { useStamps } from './useStamps'
 
 type StampedLetter = LetterResponse | IncomingLetter
 
 /**
- * Марка, приложенная к письму: миниатюра в углу с названием из каталога, по нажатию —
- * крупным планом поверх экрана. Видят её оба, но по-разному: отправитель всегда
- * (это его письмо и его марка), получатель — только после доставки, поэтому конверт
- * в пути (`Envelope`) компонент не ставит, хотя id в его ответе есть.
+ * Марка, приложенная к письму: полная 3D-карточка в углу статьи, нажатие открывает ту же
+ * карточку крупным планом поверх затемнения — без заголовков и кнопок (Esc или клик мимо).
+ * Видят её оба, но по-разному: отправитель всегда (это его письмо и его марка), получатель —
+ * только после доставки, поэтому конверт в пути (`Envelope`) компонент не ставит, хотя id
+ * в его ответе есть.
  *
  * Данные берутся из кэша `['stamps']` — того же, что у диалога запечатывания и вкладки
- * коллекции. Каталог не загружен — ничего не рисуем (без мигания заглушкой); id есть,
- * а вида в каталоге нет — заглушка без названия. Ошибившаяся загрузка картинки тоже
- * уступает ей место.
+ * коллекции. Каталог не загружен — ничего не рисуем (без мигания); id есть, а вида в
+ * каталоге нет — карточку собрать не из чего, остаётся маленькая заглушка без названия
+ * и без крупного плана.
  */
 export function StampMark({ letter }: { letter: StampedLetter }) {
   const { t, i18n } = useTranslation('letters')
@@ -32,70 +32,32 @@ export function StampMark({ letter }: { letter: StampedLetter }) {
 
   if (stampId === null || !stamps.data) return null
 
-  const name = stamp ? stampName(stamp, i18n.language) : null
-
   return (
-    <span className={styles.stampMark}>
-      <button
-        type="button"
-        className={styles.stampButton}
-        aria-label={name ? t('letter.stampOf', { name }) : t('letter.stamp')}
-        onClick={() => setOpen(true)}
-      >
-        <StampPicture stamp={stamp} />
-      </button>
-      {name ? <span className={styles.stampName}>{name}</span> : null}
+    <>
+      <span className={styles.letterStamp}>
+        {stamp ? (
+          <button
+            type="button"
+            className={styles.stampOpen}
+            aria-label={t('letter.stampOf', { name: stampName(stamp, i18n.language) })}
+            onClick={() => setOpen(true)}
+          >
+            <StampCard stamp={stamp} language={i18n.language} />
+          </button>
+        ) : (
+          <span
+            role="img"
+            aria-label={t('letter.stamp')}
+            className={`${styles.stampThumb} ${styles.stampPlaceholder}`}
+          />
+        )}
+      </span>
 
-      {open ? (
-        <Dialog
-          title={name ?? t('letter.stamp')}
-          onClose={() => setOpen(false)}
-          footer={
-            <button
-              type="button"
-              className="rounded-md border border-line px-3 py-2 text-sm"
-              data-autofocus
-              onClick={() => setOpen(false)}
-            >
-              {t('common:actions.close')}
-            </button>
-          }
-        >
-          <StampPicture stamp={stamp} large />
+      {open && stamp ? (
+        <Dialog plain title={stampName(stamp, i18n.language)} onClose={() => setOpen(false)}>
+          <StampCard stamp={stamp} language={i18n.language} />
         </Dialog>
       ) : null}
-    </span>
-  )
-}
-
-/**
- * Картинка марки: пока `image_url` пуст у всех видов, рисуется заглушка; ошибившаяся
- * загрузка тоже уступает ей место, чтобы битой картинки не было никогда.
- */
-function StampPicture({
-  stamp,
-  large = false,
-}: {
-  stamp: { image_url: string | null } | undefined
-  large?: boolean
-}) {
-  const [broken, setBroken] = useState(false)
-
-  if (stamp?.image_url === undefined || stamp.image_url === null || broken) {
-    return (
-      <span
-        aria-hidden="true"
-        className={cn(large ? styles.stampLarge : styles.stampThumb, styles.stampPlaceholder)}
-      />
-    )
-  }
-
-  return (
-    <img
-      className={large ? styles.stampLarge : styles.stampThumb}
-      src={stamp.image_url}
-      alt=""
-      onError={() => setBroken(true)}
-    />
+    </>
   )
 }

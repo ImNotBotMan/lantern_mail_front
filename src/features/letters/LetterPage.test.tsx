@@ -221,7 +221,7 @@ describe('марка на письме', () => {
     expect(letter.queryByText(stampName(winterStamp, i18n.language))).toBeNull()
   })
 
-  it('неизвестный каталогу id — заглушка без названия', async () => {
+  it('неизвестный каталогу id — заглушка без названия и без крупного плана', async () => {
     singleLetterServer({
       ...incomingLetter,
       wrapper: { postcard_id: null, seal_id: null, stamp_id: 999 },
@@ -229,10 +229,10 @@ describe('марка на письме', () => {
     await renderLetter(incomingLetter.id)
 
     const letter = await findLetterArticle()
-    const mark = await letter.findByRole('button', { name: label('letter.stamp') })
+    // Вид в каталоге не найден: карточку собрать не из чего — только заглушка.
+    expect(await letter.findByRole('img', { name: label('letter.stamp') })).toBeInTheDocument()
+    expect(letter.queryByRole('button')).toBeNull()
     expect(letter.queryByText(stampName(winterStamp, i18n.language))).toBeNull()
-
-    await userEvent.click(mark)
-    await screen.findByRole('dialog', { name: label('letter.stamp') })
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
